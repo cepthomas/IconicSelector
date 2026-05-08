@@ -16,15 +16,14 @@ using Ephemera.NBagOfTricks;
 using Ephemera.NBagOfUis;
 
 
-
 namespace Ephemera.IconicSelector
 {
     /// <summary>Master control.</summary>
     public class Selector : UserControl
     {
         #region Properties
-        /// <summary>Select style.</summary>
-        public SelectorStyle Style { set { Init(value); } }
+        // /// <summary>Select style.</summary>
+        // public SelectorStyle Style { set { Init(value); } }
 
         /// <summary>What the mouse click does.</summary>
         public MouseFunction LeftMouseClick { get; set; } = MouseFunction.Click;
@@ -32,20 +31,45 @@ namespace Ephemera.IconicSelector
         /// <summary>Allow drag and drop (files) from other applications.</summary>
         public bool AllowExternalDrop { get; set; } = false;
 
+        /// <summary>Image size.</summary>
+        public int ImageSize { get; set; } = 32;
+
+        /// <summary>Cosmetics.</summary>
+        public Font DrawFont { get; set; } = new("Calibri", 11, FontStyle.Regular, GraphicsUnit.Point, 0);
+
+        /// <summary>Cosmetics.</summary>
+        public Color TargetColor { get; set; } = Color.Aqua;
+
+        /// <summary>Visual space at edges.</summary>
+        public int Pad { get; set; } = 4;
+
         /// <summary>Space between items</summary>
         public int Spacing { get; set; } = 10;
         #endregion
 
         #region Fields
-        /// <summary>Current config.</summary>
-        DrawSpec _spec;
+        // /// <summary>Current config.</summary>
+        //SelectorStyle _style;
+        //ItemGeometry _geometry;
 
         /// <summary>All entries in the collection.</summary>
         readonly List<ItemDisplay> _itemds = [];
 
         /// <summary>If no valid image available.</summary>
         Bitmap _defaultImage;
+
+        /// <summary>ItemDisplay geometry.</summary>
+        Point _imageLoc;
+
+        /// <summary>ItemDisplay geometry.</summary>
+        Rectangle _textRect;
+
+        /// <summary>ItemDisplay geometry.</summary>
+        Size _itemSize;
         #endregion
+
+
+
 
         #region Events
         /// <summary></summary>
@@ -67,42 +91,39 @@ namespace Ephemera.IconicSelector
             // Init myself.
             AllowDrop = true;
             AutoScroll = true;
-
-            Init(SelectorStyle.Icon);
         }
 
         /// <summary>
         /// Constructor.
         /// </summary>
-        void Init(SelectorStyle style)
+        public void Init(SelectorStyle style)
         {
             switch (style)
             {
                 case SelectorStyle.Tile:
-                    _spec = new DrawSpecTile();
+                    _imageLoc = new(Pad, Pad);
+                    _textRect = new(Pad + ImageSize + Pad, Pad, ImageSize / 2 - Pad, ImageSize - Pad * 2);
+                    _itemSize = new(ImageSize * 3 + Pad * 3, ImageSize + Pad * 2);
                     break;
 
                 default:
                 case SelectorStyle.Icon:
-                    _spec = new DrawSpecIcon();
+                    _imageLoc = new(Pad + ImageSize / 2, Pad);
+                    _textRect = new(Pad, Pad + ImageSize, ImageSize - Pad * 2, ImageSize / 2 - Pad);
+                    _itemSize = new(ImageSize * 2 + Pad * 2, ImageSize * 2 + Pad * 2);
                     break;
             }
 
-            // Init myself.
-            AllowDrop = true;
-            AutoScroll = true;
-
             // Make a default image. Big X.
-            Bitmap bmp = new(_spec.ImageSize, _spec.ImageSize);
-            using (Graphics gr = Graphics.FromImage(bmp))
+            _defaultImage = new(ImageSize, ImageSize);
+            using (Graphics gr = Graphics.FromImage(_defaultImage))
             {
                 Pen pen = new(Color.Purple, 4);
                 int pad = 2;
-                int sz = _spec.ImageSize - 2 * pad;
+                int sz = ImageSize - 2 * pad;
                 gr.DrawLine(pen, pad, pad, sz, sz);
                 gr.DrawLine(pen, pad, sz, sz, pad);
             }
-            _defaultImage = (Bitmap)bmp.Clone();
         }
 
         /// <summary>
@@ -134,11 +155,18 @@ namespace Ephemera.IconicSelector
             Item item = new()
             {
                 Caption = text,
-                Bitmap = bmp is null ? _defaultImage : bmp.Resize(_spec.ImageSize, _spec.ImageSize),
+                Bitmap = bmp is null ? _defaultImage : bmp.Resize(ImageSize, ImageSize),
                 Value = value,
             };
 
-            ItemDisplay itemd = new(item, _spec);
+
+            ItemDisplay itemd = new(item) //, _geometry);
+            {
+                TargetColor = TargetColor,
+                ImageLoc = _imageLoc,
+                TextRect = _textRect,
+                Size = _itemSize,
+            };
 
             itemd.MouseClick += Item_MouseClick;
             itemd.MouseDown += Item_MouseDown;
@@ -205,9 +233,8 @@ namespace Ephemera.IconicSelector
             pe.Graphics.Clear(BackColor);
 
             // Calc grid layout.
-            var sz = _spec.Size;
-            int xinc = sz.Width + Spacing;
-            int yinc = sz.Height + Spacing;
+            int xinc = _itemSize.Width + Spacing;
+            int yinc = _itemSize.Height + Spacing;
             int numColumns = Math.Max(1, (Width - Spacing) / xinc);
 
             // Configure item draw.

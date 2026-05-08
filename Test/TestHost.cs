@@ -24,7 +24,6 @@ namespace Ephemera.IconicSelector.Test
 
         protected override void OnLoad(EventArgs e)
         {
-            ///// Init controls.
             tvInfo.BackColor = Color.Cornsilk;
             tvInfo.Matchers =
             [
@@ -32,16 +31,12 @@ namespace Ephemera.IconicSelector.Test
                 new("WRN ", Color.Green),
             ];
 
-            ///// IconicSelector
-            var spec = new DrawSpecIcon()
-            {
-                TargetColor = Color.LightSkyBlue,
-                Pad = 8,
-                ImageSize = IMAGE_SIZE
-            };
             icsel.AllowExternalDrop = true;
             icsel.LeftMouseClick = MouseFunction.Click;
-            icsel.Style = SelectorStyle.Tile;
+            icsel.TargetColor = Color.LightSkyBlue;
+            icsel.Pad = 8;
+            icsel.ImageSize = IMAGE_SIZE;
+            icsel.Init(SelectorStyle.Tile);
 
             // Init the image list.
             var sdir = MiscUtils.GetSourcePath();

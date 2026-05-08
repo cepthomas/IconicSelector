@@ -25,6 +25,18 @@ namespace Ephemera.IconicSelector
         /// <summary>The owned item.</summary>
         public Item Item { get; init; }
 
+        /// <summary>Geometry.</summary>
+        public Point ImageLoc { get; init; }
+
+        /// <summary>Geometry.</summary>
+        public Rectangle TextRect { get; init; }
+
+        ///// <summary>Geometry.</summary>
+        //public Size ItemSize { get; init; }
+
+        /// <summary>Cosmetics.</summary>
+        public Color TargetColor { get; set; } = Color.Aqua;
+
         /// <summary></summary>
         public bool Selected = false;
 
@@ -32,21 +44,21 @@ namespace Ephemera.IconicSelector
         public bool IsTarget = false;
         #endregion
 
-        #region Fields
-        /// <summary>How to draw</summary>
-        readonly DrawSpec _spec;
-        #endregion
+        //#region Fields
+        ///// <summary>How to draw</summary>
+        //readonly ItemGeometry _geometry;
+        //#endregion
 
         #region Lifecycle
         /// <summary>
         /// Constructor.
         /// </summary>
-        public ItemDisplay(Item item, DrawSpec spec)
+        public ItemDisplay(Item item) //, ItemGeometry geometry)
         {
             Item = item;
-            _spec = spec;
+            //_geometry = geometry;
             AllowDrop = true;
-            Size = spec.Size;
+            //Size = geometry.Size;
         }
 
         /// <summary>
@@ -70,7 +82,7 @@ namespace Ephemera.IconicSelector
         /// <param name="pe"></param>
         protected override void OnPaint(PaintEventArgs pe)
         {
-            pe.Graphics.Clear(IsTarget ? _spec.TargetColor : BackColor);
+            pe.Graphics.Clear(IsTarget ? TargetColor : BackColor);
 
             if (Selected) // Draw box.
             {
@@ -81,11 +93,11 @@ namespace Ephemera.IconicSelector
             }
 
             // Main content.
-            pe.Graphics.DrawRectangle(Pens.Green, _spec.TextRect);
-            pe.Graphics.DrawImage(Item.Bitmap, _spec.ImageLoc);
+            pe.Graphics.DrawRectangle(Pens.Green, TextRect);
+            pe.Graphics.DrawImage(Item.Bitmap, ImageLoc);
 
             using StringFormat sfmt = new() { LineAlignment = StringAlignment.Center, Alignment = StringAlignment.Center };
-            pe.Graphics.DrawString(Item.Caption, Font, Brushes.Black, _spec.TextRect, sfmt);
+            pe.Graphics.DrawString(Item.Caption, Font, Brushes.Black, TextRect, sfmt);
         }
         #endregion
 
