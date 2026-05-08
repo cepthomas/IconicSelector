@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0-windows</TargetFrameworks>
+        <UseWindowsForms>true</UseWindowsForms>
+        <Version>2.0.0</Version>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Description>General purpose UI selector</Description>
+        <Copyright>MIT License</Copyright>
+        <RootNamespace>Ephemera.IconicSelector</RootNamespace>
+        <AssemblyName>Ephemera.IconicSelector</AssemblyName>
+        <OutputPath>bin\</OutputPath>
+        <!-- <DefineConstants>DEBUG;TRACE</DefineConstants> -->
+        <WarningLevel>4</WarningLevel>
+        <NoWarn>CS1591</NoWarn> 
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
+        <!-- en none -->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Remove="lib\**" />
+        <Compile Remove="old\**" />
+        <Compile Remove="Test\**" />
+        <EmbeddedResource Remove="lib\**" />
+        <EmbeddedResource Remove="old\**" />
+        <EmbeddedResource Remove="Test\**" />
+        <None Remove="lib\**" />
+        <None Remove="old\**" />
+        <None Remove="Test\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Selector_1.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="Ephemera.NBagOfTricks">
+            <HintPath>lib\Ephemera.NBagOfTricks.dll</HintPath>
+        </Reference>
+        <Reference Include="Ephemera.NBagOfUis">
+          <HintPath>lib\Ephemera.NBagOfUis.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+</Project>

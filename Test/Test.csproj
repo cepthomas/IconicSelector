@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0-windows</TargetFrameworks>
+        <OutputType>WinExe</OutputType>
+        <UseWindowsForms>true</UseWindowsForms>
+        <Version>2.0.0</Version>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Description>IconicSelector tester</Description>
+        <Copyright>MIT License</Copyright>
+        <RootNamespace>Ephemera.IconicSelector.Test</RootNamespace>
+        <AssemblyName>Ephemera.IconicSelector.Test</AssemblyName>
+        <OutputPath>bin\</OutputPath>
+        <!-- <DefineConstants>DEBUG;TRACE</DefineConstants> -->
+        <WarningLevel>4</WarningLevel>
+        <NoWarn>CS1591;CA1822</NoWarn>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
+        <!-- en none -->
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Remove="old\**" />
+      <EmbeddedResource Remove="old\**" />
+      <None Remove="old\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IconicSelector.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="Ephemera.NBagOfTricks">
+            <HintPath>..\lib\Ephemera.NBagOfTricks.dll</HintPath>
+        </Reference>
+        <Reference Include="Ephemera.NBagOfUis">
+            <HintPath>..\lib\Ephemera.NBagOfUis.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+</Project>
