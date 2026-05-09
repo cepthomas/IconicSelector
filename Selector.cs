@@ -156,12 +156,7 @@ namespace Ephemera.IconicSelector
         /// <param name="index">Where to insert. -1 is append</param>
         public void AddItem(string text, Bitmap? bmp, object value, int index = -1)
         {
-            Item item = new()
-            {
-                Caption = text,
-                Bitmap = bmp is null ? _defaultImage : bmp.Resize(ImageSize, ImageSize),
-                Value = value,
-            };
+            Item item = new(text, bmp is null ? _defaultImage : bmp.Resize(ImageSize, ImageSize), value);
 
             ItemDisplay itemd = new(item)
             {

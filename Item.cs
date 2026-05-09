@@ -20,15 +20,18 @@ namespace Ephemera.IconicSelector
         /// <summary>Displayed text</summary>
         public string Caption { get; set; } = "";
 
-        /// <summary>Associated image null if not available</summary>
+        /// <summary>Associated image or null if not available</summary>
         public Bitmap Bitmap { get; set; }
 
         /// <summary>Meaningful for client use</summary>
         public object Value { get; set; } = "???";
 
         /// <summary>Normal constructor</summary>
-        public Item()
+        public Item(string text, Bitmap bmp, object value)
         {
+            Caption = text;
+            Bitmap = bmp;
+            Value = value;
         }
 
         /// <summary>Copy constructor</summary>
