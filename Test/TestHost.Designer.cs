@@ -33,32 +33,31 @@ namespace Ephemera.IconicSelector.Test
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TestHost));
-            button1 = new Button();
-            btnDnD = new Button();
+            btnGo1 = new Button();
+            btnGo2 = new Button();
             icsel = new Selector();
             tvInfo = new Ephemera.NBagOfUis.TextViewer();
             SuspendLayout();
             // 
             // button1
             // 
-            button1.Location = new Point(12, 12);
-            button1.Name = "button1";
-            button1.Size = new Size(48, 42);
-            button1.TabIndex = 2;
-            button1.Text = "!!!";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += Button1_Click;
+            btnGo1.Location = new Point(12, 12);
+            btnGo1.Name = "btnGo1";
+            btnGo1.Size = new Size(48, 42);
+            btnGo1.TabIndex = 2;
+            btnGo1.Text = "Go1";
+            btnGo1.UseVisualStyleBackColor = true;
+            btnGo1.Click += BtnGo1_Click;
             // 
             // btnDnD
             // 
-            btnDnD.Location = new Point(66, 12);
-            btnDnD.Name = "btnDnD";
-            btnDnD.Size = new Size(50, 42);
-            btnDnD.TabIndex = 3;
-            btnDnD.Text = "DnD";
-            btnDnD.UseVisualStyleBackColor = true;
-            btnDnD.Click += BtnDnD_Click;
+            btnGo2.Location = new Point(66, 12);
+            btnGo2.Name = "btnGo2";
+            btnGo2.Size = new Size(50, 42);
+            btnGo2.TabIndex = 3;
+            btnGo2.Text = "Go2";
+            btnGo2.UseVisualStyleBackColor = true;
+            btnGo2.Click += BtnGo2_Click;
             // 
             // icsel
             // 
@@ -67,22 +66,27 @@ namespace Ephemera.IconicSelector.Test
             icsel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             icsel.AutoScroll = true;
             icsel.BorderStyle = BorderStyle.FixedSingle;
+            icsel.DrawFont = new Font("Calibri", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            icsel.ImageSize = 32;
             icsel.LeftMouseClick = MouseFunction.Click;
             icsel.Location = new Point(12, 73);
             icsel.Name = "icsel";
-            icsel.Size = new Size(358, 382);
+            icsel.Pad = 4;
+            icsel.Size = new Size(369, 382);
+            icsel.Spacing = 10;
             icsel.TabIndex = 4;
+            icsel.TargetColor = Color.Aqua;
             // 
             // tvInfo
             // 
-            tvInfo.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            tvInfo.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            tvInfo.Location = new System.Drawing.Point(390, 73);
+            tvInfo.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
+            tvInfo.BorderStyle = BorderStyle.FixedSingle;
+            tvInfo.Location = new Point(387, 73);
             tvInfo.MatchUseBackground = true;
             tvInfo.MaxText = 50000;
             tvInfo.Name = "tvInfo";
             tvInfo.Prompt = "";
-            tvInfo.Size = new System.Drawing.Size(454, 382);
+            tvInfo.Size = new Size(685, 382);
             tvInfo.TabIndex = 8;
             tvInfo.WordWrap = true;
             // 
@@ -90,11 +94,11 @@ namespace Ephemera.IconicSelector.Test
             // 
             AutoScaleDimensions = new SizeF(8F, 19F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(856, 472);
+            ClientSize = new Size(1084, 472);
             Controls.Add(tvInfo);
             Controls.Add(icsel);
-            Controls.Add(btnDnD);
-            Controls.Add(button1);
+            Controls.Add(btnGo2);
+            Controls.Add(btnGo1);
             Name = "TestHost";
             Text = "Form1";
             ResumeLayout(false);
@@ -102,8 +106,8 @@ namespace Ephemera.IconicSelector.Test
 
         #endregion
 
-        private Button button1;
-        private Button btnDnD;
+        private Button btnGo1;
+        private Button btnGo2;
         private Selector icsel;
         private Ephemera.NBagOfUis.TextViewer tvInfo;
     }

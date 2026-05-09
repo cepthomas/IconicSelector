@@ -33,10 +33,11 @@ namespace Ephemera.IconicSelector.Test
 
             icsel.AllowExternalDrop = true;
             icsel.LeftMouseClick = MouseFunction.Click;
-            icsel.TargetColor = Color.LightSkyBlue;
+            icsel.TargetColor = Color.LightYellow;
             icsel.Pad = 8;
             icsel.ImageSize = IMAGE_SIZE;
-            icsel.Init(SelectorStyle.Tile);
+            icsel.LeftMouseClick = MouseFunction.SingleSelect;
+            icsel.Init(SelectorStyle.Icon);
 
             // Init the image list.
             var sdir = MiscUtils.GetSourcePath();
@@ -58,7 +59,7 @@ namespace Ephemera.IconicSelector.Test
             var defbmp = pbmp.GetBitmap();
 
             // Add entries to selector
-            Bitmap[] bmps = [bmp1, icon.ToBitmap(), bmp2, defbmp];
+            Bitmap?[] bmps = [bmp1, icon.ToBitmap(), bmp2, defbmp, null];
             var rand = new Random();
             for (int i = 0; i < 15; i++)
             {
@@ -74,7 +75,8 @@ namespace Ephemera.IconicSelector.Test
 
             icsel.DroppedTarget += (sender, e) =>
             {
-                tvInfo.Append($"DroppedTarget -> [{e.NewItem}]");
+                tvInfo.Append($"DroppedTarget ->");
+                tvInfo.Append($"  [{e.NewItem}]");
             };
 
             icsel.Trace += (sender, e) =>
@@ -85,20 +87,7 @@ namespace Ephemera.IconicSelector.Test
             base.OnLoad(e);
         }
 
-        void BtnDnD_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                var formDnD = new Snip_DragNDrop.FormDnd();
-                formDnD.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                tvInfo.Append($"ERR -> [{ex}]");
-            }
-        }
-
-        async void Button1_Click(object sender, EventArgs e)
+        async void BtnGo1_Click(object sender, EventArgs e)
         {
             // Play with uri and favicons.
             var uri = new Uri("https://www.youtube.com/category/color/watch?v=0ju5LRTMFLw&list=RD0ju5LRTMFLw&start_radio=1");
@@ -129,5 +118,19 @@ namespace Ephemera.IconicSelector.Test
 
             }
         }
+
+        void BtnGo2_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                //var formDnD = new Snip_DragNDrop.FormDnd();
+                //formDnD.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                tvInfo.Append($"ERR -> [{ex}]");
+            }
+        }
+
     }
 }

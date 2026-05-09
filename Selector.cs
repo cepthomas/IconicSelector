@@ -22,8 +22,7 @@ namespace Ephemera.IconicSelector
     public class Selector : UserControl
     {
         #region Properties
-        // /// <summary>Select style.</summary>
-        // public SelectorStyle Style { set { Init(value); } }
+        // TODO - insert before/after target.
 
         /// <summary>What the mouse click does.</summary>
         public MouseFunction LeftMouseClick { get; set; } = MouseFunction.Click;
@@ -48,28 +47,24 @@ namespace Ephemera.IconicSelector
         #endregion
 
         #region Fields
-        // /// <summary>Current config.</summary>
-        //SelectorStyle _style;
-        //ItemGeometry _geometry;
+        /// <summary>Current config.</summary>
+        SelectorStyle _style = SelectorStyle.Icon;
 
         /// <summary>All entries in the collection.</summary>
         readonly List<ItemDisplay> _itemds = [];
 
         /// <summary>If no valid image available.</summary>
-        Bitmap _defaultImage;
+        Bitmap _defaultImage = new(16, 16);
 
         /// <summary>ItemDisplay geometry.</summary>
-        Point _imageLoc;
+        Rectangle _itemdImageRect;
 
         /// <summary>ItemDisplay geometry.</summary>
-        Rectangle _textRect;
+        Rectangle _itemdTextRect;
 
         /// <summary>ItemDisplay geometry.</summary>
-        Size _itemSize;
+        Size _itemdSize;
         #endregion
-
-
-
 
         #region Events
         /// <summary></summary>
@@ -89,8 +84,10 @@ namespace Ephemera.IconicSelector
         public Selector()
         {
             // Init myself.
+            SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
             AllowDrop = true;
             AutoScroll = true;
+            Init(SelectorStyle.Icon);
         }
 
         /// <summary>
@@ -98,32 +95,39 @@ namespace Ephemera.IconicSelector
         /// </summary>
         public void Init(SelectorStyle style)
         {
+            _style = style;
+
+            // Figure geometry.
+            Size tSize = new(2 * ImageSize, ImageSize);
+            Size iSize = new(ImageSize, ImageSize);
+            Point iLoc = new();
+            Point tLoc = new();
+
             switch (style)
             {
                 case SelectorStyle.Tile:
-                    _imageLoc = new(Pad, Pad);
-                    _textRect = new(Pad + ImageSize + Pad, Pad, ImageSize / 2 - Pad, ImageSize - Pad * 2);
-                    _itemSize = new(ImageSize * 3 + Pad * 3, ImageSize + Pad * 2);
+                    iLoc = new(Pad, Pad);
+                    tLoc = new(_itemdImageRect.Right + Pad, Pad);
                     break;
 
-                default:
                 case SelectorStyle.Icon:
-                    _imageLoc = new(Pad + ImageSize / 2, Pad);
-                    _textRect = new(Pad, Pad + ImageSize, ImageSize - Pad * 2, ImageSize / 2 - Pad);
-                    _itemSize = new(ImageSize * 2 + Pad * 2, ImageSize * 2 + Pad * 2);
+                    iLoc = new(Pad + ImageSize / 2, Pad);
+                    tLoc = new(Pad, _itemdImageRect.Bottom + Pad);
                     break;
             }
+
+            _itemdImageRect = new(iLoc, iSize);
+            _itemdTextRect = new(tLoc, tSize);
+            _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
 
             // Make a default image. Big X.
             _defaultImage = new(ImageSize, ImageSize);
-            using (Graphics gr = Graphics.FromImage(_defaultImage))
-            {
-                Pen pen = new(Color.Purple, 4);
-                int pad = 2;
-                int sz = ImageSize - 2 * pad;
-                gr.DrawLine(pen, pad, pad, sz, sz);
-                gr.DrawLine(pen, pad, sz, sz, pad);
-            }
+            using Graphics gr = Graphics.FromImage(_defaultImage);
+            Pen pen = new(Color.Purple, 4);
+            int pad = 2;
+            int sz = ImageSize - 2 * pad;
+            gr.DrawLine(pen, pad, pad, sz, sz);
+            gr.DrawLine(pen, pad, sz, sz, pad);
         }
 
         /// <summary>
@@ -159,24 +163,20 @@ namespace Ephemera.IconicSelector
                 Value = value,
             };
 
-
-            ItemDisplay itemd = new(item) //, _geometry);
+            ItemDisplay itemd = new(item)
             {
                 TargetColor = TargetColor,
-                ImageLoc = _imageLoc,
-                TextRect = _textRect,
-                Size = _itemSize,
+                ImageLoc = _itemdImageRect.Location,
+                TextRect = _itemdTextRect,
+                Size = _itemdSize,
             };
 
-            itemd.MouseClick += Item_MouseClick;
-            itemd.MouseDown += Item_MouseDown;
-            // itemd.QueryContinueDrag += Item_QueryContinueDrag;
-            // itemd.MouseUp += Item_MouseUp;
-            // itemd.MouseMove += Item_MouseMove;
-            itemd.DragOver += Item_DragOver;
-            itemd.DragDrop += Item_DragDrop;
-            itemd.DragEnter += Item_DragEnter;
-            itemd.DragLeave += Item_DragLeave;
+            itemd.DoMouseClick += Itemd_DoMouseClick;
+            itemd.StartDragDrop += Itemd_StartDragDrop;
+            itemd.DragOver += Itemd_DragOver;
+            itemd.DragDrop += Itemd_DragDrop;
+            itemd.DragEnter += Itemd_DragEnter;
+            itemd.DragLeave += Itemd_DragLeave;
 
             Controls.Add(itemd);
 
@@ -233,8 +233,8 @@ namespace Ephemera.IconicSelector
             pe.Graphics.Clear(BackColor);
 
             // Calc grid layout.
-            int xinc = _itemSize.Width + Spacing;
-            int yinc = _itemSize.Height + Spacing;
+            int xinc = _itemdSize.Width + Spacing;
+            int yinc = _itemdSize.Height + Spacing;
             int numColumns = Math.Max(1, (Width - Spacing) / xinc);
 
             // Configure item draw.
@@ -259,7 +259,7 @@ namespace Ephemera.IconicSelector
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void Item_MouseClick(object? sender, MouseEventArgs e)// TODO doesn't fire if DandD - prob need mousedown/up
+        void Itemd_DoMouseClick(object? sender, MouseEventArgs e)
         {
             ArgumentNullException.ThrowIfNull(sender);
 
@@ -297,6 +297,8 @@ namespace Ephemera.IconicSelector
                     // ignored
                     break;
             }
+
+            Invalidate();
         }
         #endregion
 
@@ -306,11 +308,11 @@ namespace Ephemera.IconicSelector
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void Item_MouseDown(object? sender, MouseEventArgs e)
+        void Itemd_StartDragDrop(object? sender, MouseEventArgs e)
         {
             int index = GetItemIndex(sender);
 
-            Trace?.Invoke(this, $"Item_MouseDown() index:{index}");
+            Trace?.Invoke(this, $"Itemd_ItemDragDropStart() index:{index}");
 
             DoDragDrop(index, DragDropEffects.Move);
         }
@@ -320,7 +322,7 @@ namespace Ephemera.IconicSelector
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void Item_DragEnter(object? sender, DragEventArgs e)
+        void Itemd_DragEnter(object? sender, DragEventArgs e)
         {
             int index = GetItemIndex(sender);
             if (e.Data is null) throw new InvalidOperationException();
@@ -328,7 +330,7 @@ namespace Ephemera.IconicSelector
 
             if (srcIndex is not null && index != (int)srcIndex)
             {
-                Trace?.Invoke(this, $"Item_DragEnter() index:{index}");
+                Trace?.Invoke(this, $"Itemd_DragEnter() index:{index}");
                 e.Effect = e.AllowedEffect;
 
                 SetTarget(index);
@@ -347,12 +349,12 @@ namespace Ephemera.IconicSelector
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void Item_DragOver(object? sender, DragEventArgs e)
+        void Itemd_DragOver(object? sender, DragEventArgs e)
         {
             // Nothing?
             //int index = GetItemIndex(sender);
             //var itemd = _itemds[index];
-            //Trace?.Invoke(this, $"Item_DragOver() index:{index} IsTarget:{itemd.IsTarget}");
+            //Trace?.Invoke(this, $"Itemd_DragOver() index:{index} IsTarget:{itemd.IsTarget}");
             //Invalidate();
         }
 
@@ -361,11 +363,11 @@ namespace Ephemera.IconicSelector
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>d
-        void Item_DragLeave(object? sender, EventArgs e)
+        void Itemd_DragLeave(object? sender, EventArgs e)
         {
             int index = GetItemIndex(sender);
 
-            Trace?.Invoke(this, $"Item_DragLeave() index:{index}");
+            Trace?.Invoke(this, $"Itemd_DragLeave() index:{index}");
 
             SetTarget(-1);
 
@@ -378,12 +380,12 @@ namespace Ephemera.IconicSelector
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void Item_DragDrop(object? sender, DragEventArgs e)
+        void Itemd_DragDrop(object? sender, DragEventArgs e)
         {
             int index = GetItemIndex(sender);
             if (e.Data is null) throw new InvalidOperationException();
 
-            Trace?.Invoke(this, $"Item_DragDrop() index:{index}");
+            Trace?.Invoke(this, $"Itemd_DragDrop() index:{index}");
 
             // What do we have here?
             var dt = e.Data.GetFormats();
@@ -395,7 +397,6 @@ namespace Ephemera.IconicSelector
 
                 var draggedItem = _itemds[srcIndex];
                 // Insert a copy of the dragged item at the target index.
-                //Item copy = new(draggedItem.Item);
                 Item it = draggedItem.Item;
                 AddItem(it.Caption, it.Bitmap, it.Value, index);
                 // Remove the original dragged item.
@@ -484,6 +485,22 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
+        /// Get the item safely.
+        /// </summary>
+        /// <param name="item">ItemDisplay to test</param>
+        /// <returns>The item if valid</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        ItemDisplay GetItemd(object? item)
+        {
+            ArgumentNullException.ThrowIfNull(item);
+            if (item.GetType() != typeof(ItemDisplay)) throw new ArgumentException("Invalid type");
+
+            var itemd = (ItemDisplay)item;
+            return itemd;
+        }
+
+        /// <summary>
         /// Get the index in the collection
         /// </summary>
         /// <param name="item">ItemDisplay to test</param>
@@ -492,10 +509,7 @@ namespace Ephemera.IconicSelector
         /// <exception cref="ArgumentException"></exception>
         int GetItemIndex(object? item)
         {
-            ArgumentNullException.ThrowIfNull(item);
-            if (item.GetType() != typeof(ItemDisplay)) throw new ArgumentException("Invalid type");
-
-            var itemd = (ItemDisplay)item;
+            var itemd = GetItemd(item);
             int index = _itemds.IndexOf(itemd);
             return index;
         }

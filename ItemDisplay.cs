@@ -17,6 +17,7 @@ namespace Ephemera.IconicSelector
 {
     /// <summary>
     /// One selectable item.
+    /// Differentiates DragAndDrop from simple click.
     /// </summary>
     [ToolboxItem(false), Browsable(false)] // not useable in designer
     public class ItemDisplay : UserControl
@@ -31,9 +32,6 @@ namespace Ephemera.IconicSelector
         /// <summary>Geometry.</summary>
         public Rectangle TextRect { get; init; }
 
-        ///// <summary>Geometry.</summary>
-        //public Size ItemSize { get; init; }
-
         /// <summary>Cosmetics.</summary>
         public Color TargetColor { get; set; } = Color.Aqua;
 
@@ -44,27 +42,31 @@ namespace Ephemera.IconicSelector
         public bool IsTarget = false;
         #endregion
 
-        //#region Fields
-        ///// <summary>How to draw</summary>
-        //readonly ItemGeometry _geometry;
-        //#endregion
+        #region Events
+        public event EventHandler<MouseEventArgs>? DoMouseClick;
+        public event EventHandler<MouseEventArgs>? StartDragDrop;
+        #endregion
+
+        #region Fields
+        Point _dragStart;
+        bool _dragging = false;
+        #endregion
 
         #region Lifecycle
         /// <summary>
         /// Constructor.
         /// </summary>
-        public ItemDisplay(Item item) //, ItemGeometry geometry)
+        public ItemDisplay(Item item)
         {
+            SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
             Item = item;
-            //_geometry = geometry;
             AllowDrop = true;
-            //Size = geometry.Size;
         }
 
         /// <summary>
         ///  Clean up any resources being used.
         /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        /// <param name="disposing">True if managed resources should be disposed.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -72,6 +74,68 @@ namespace Ephemera.IconicSelector
                 Item.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        /// <summary>Read me</summary>
+        public override string ToString()
+        {
+            return $"item:{Item} sel:{Selected}";
+        }
+        #endregion
+
+        #region Mouse events
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            // Record the starting point of the click
+            _dragStart = e.Location;
+            _dragging = false;
+
+            base.OnMouseDown(e);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            bool handled = false;
+            if (e.Button == MouseButtons.Left)
+            {
+                // Calculate how far the mouse has moved
+                int deltaX = Math.Abs(e.X - _dragStart.X);
+                int deltaY = Math.Abs(e.Y - _dragStart.Y);
+
+                // Use system metrics for the drag threshold (usually 4x4 pixels)
+                if (!_dragging && (deltaX > SystemInformation.DragSize.Width || deltaY > SystemInformation.DragSize.Height))
+                {
+                    _dragging = true;
+                    StartDragDrop?.Invoke(this, e);
+                    handled = true;
+                }
+            }
+
+            if (!handled) base.OnMouseMove(e);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            bool handled = false;
+            if (!_dragging)
+            {
+                // This was just a click, not a drag!
+                DoMouseClick?.Invoke(this, e);
+            }
+
+            if (!handled) base.OnMouseUp(e);
         }
         #endregion
 
@@ -98,13 +162,9 @@ namespace Ephemera.IconicSelector
 
             using StringFormat sfmt = new() { LineAlignment = StringAlignment.Center, Alignment = StringAlignment.Center };
             pe.Graphics.DrawString(Item.Caption, Font, Brushes.Black, TextRect, sfmt);
+
+            base.OnPaint(pe);
         }
         #endregion
-
-        /// <summary>Read me</summary>
-        public override string ToString()
-        {
-            return $"item:{Item} sel:{Selected}";
-        }
     }
 }

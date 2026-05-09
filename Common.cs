@@ -20,9 +20,6 @@ namespace Ephemera.IconicSelector
     /// <summary></summary>
     public enum MouseFunction { SingleSelect, MultiSelect, Click }
 
-    ///// <summary>Reporting client errors.</summary>
-    //public class AppException(string message) : Exception(message);
-
     /// <summary>User selection(s) have changed.</summary>
     public class SelectionEventArgs : EventArgs
     {
