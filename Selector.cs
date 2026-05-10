@@ -207,6 +207,17 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
+        /// Get all items.
+        /// </summary>
+        /// <returns>Items.</returns>
+        public List<Item> GetItems()
+        {
+            List<Item> res = [];
+            _itemds.ForEach(itemd => res.Add(itemd.Item));
+            return res;
+        }
+
+        /// <summary>
         /// Diagnostic.
         /// </summary>
         /// <returns></returns>
