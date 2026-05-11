@@ -19,13 +19,14 @@ using Ephemera.NBagOfUis;
 namespace Ephemera.IconicSelector
 {
     /// <summary>Master control.</summary>
-    public class Selector : UserControl
+    public class Selector : ScrollableControl // TODO UserControl  https://www.cyotek.com/blog/creating-a-custom-single-axis-scrolling-control-in-winforms
     {
         #region Properties
-        // TODO - insert before/after target.
-
         /// <summary>What the mouse click does.</summary>
         public MouseFunction LeftMouseClick { get; set; } = MouseFunction.Click;
+
+        /// <summary>Drag and drop location.</summary>
+        public bool InsertAfter { get; set; } = false;
 
         /// <summary>Allow drag and drop (files) from other applications.</summary>
         public bool AllowExternalDrop { get; set; } = false;
@@ -159,7 +160,7 @@ namespace Ephemera.IconicSelector
 
         #region API
         /// <summary>
-        /// Add a new item. If insertion mark is visible, insert there, otherwise append.
+        /// Add a new item.
         /// </summary>
         /// <param name="text">For display below/next to image</param>
         /// <param name="bmp">Bitmap</param>
@@ -167,7 +168,7 @@ namespace Ephemera.IconicSelector
         /// <param name="index">Where to insert. -1 is append</param>
         public void AddItem(string text, Bitmap? bmp, object value, int index = -1)
         {
-            // TODO _fit
+            // TODO _fit =>   see ClipDisplay
             ///// <summary>Client is in charge of images</summary>
             //None,
             ///// <summary>Rendered image height from client, width scaled</summary>
@@ -412,8 +413,13 @@ namespace Ephemera.IconicSelector
         /// <param name="e"></param>
         void Itemd_DragDrop(object? sender, DragEventArgs e)
         {
-            int index = GetItemIndex(sender);
             if (e.Data is null) throw new InvalidOperationException();
+            int index = GetItemIndex(sender);
+
+            if (InsertAfter && index < _itemds.Count - 1)
+            {
+                index++;
+            }
 
             Trace?.Invoke(this, $"Itemd_DragDrop() index:{index}");
 

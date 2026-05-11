@@ -25,7 +25,7 @@ namespace Ephemera.IconicSelector
         Image
     }
 
-    /// <summary>Image fitting.</summary>
+    /// <summary>Image fitting to ImageSize.</summary>
     public enum ImageFit
     {
         /// <summary>Client is in charge of images</summary>

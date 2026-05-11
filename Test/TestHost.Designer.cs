@@ -65,7 +65,6 @@ namespace Ephemera.IconicSelector.Test
             icsel.AllowExternalDrop = false;
             icsel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             icsel.AutoScroll = true;
-            icsel.BorderStyle = BorderStyle.FixedSingle;
             icsel.DrawFont = new Font("Calibri", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
             icsel.LeftMouseClick = MouseFunction.Click;
             icsel.Location = new Point(12, 73);

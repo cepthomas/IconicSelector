@@ -37,14 +37,14 @@ namespace Ephemera.IconicSelector.Test
 
             const int DEF_IMAGE_SIZE = 32;
 
-            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-            //icsel.Init(SelectorStyle.Icon, ImageFit.None);
+            icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            icsel.Init(SelectorStyle.Icon, ImageFit.None);
 
             //icsel.ImageSize = new(IMAGE_SIZE, IMAGE_SIZE);
             //icsel.Init(SelectorStyle.Tile, ImageFit.None);
 
-            icsel.ImageSize = new(200, 64);
-            icsel.Init(SelectorStyle.Image, ImageFit.None); // these
+            //icsel.ImageSize = new(200, 64);
+            //icsel.Init(SelectorStyle.Image, ImageFit.None); // these FitHeight, FitWidth, Fill,
 
             // Init the image list.
             var sdir = MiscUtils.GetSourcePath();
