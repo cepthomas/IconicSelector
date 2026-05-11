@@ -15,8 +15,6 @@ namespace Ephemera.IconicSelector.Test
 {
     public partial class TestHost : Form
     {
-        const int IMAGE_SIZE = 32;
-
         public TestHost()
         {
             InitializeComponent();
@@ -35,9 +33,18 @@ namespace Ephemera.IconicSelector.Test
             icsel.LeftMouseClick = MouseFunction.Click;
             icsel.TargetColor = Color.LightYellow;
             icsel.Pad = 8;
-            icsel.ImageSize = IMAGE_SIZE;
             icsel.LeftMouseClick = MouseFunction.SingleSelect;
-            icsel.Init(SelectorStyle.Icon);
+
+            const int DEF_IMAGE_SIZE = 32;
+
+            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            //icsel.Init(SelectorStyle.Icon, ImageFit.None);
+
+            //icsel.ImageSize = new(IMAGE_SIZE, IMAGE_SIZE);
+            //icsel.Init(SelectorStyle.Tile, ImageFit.None);
+
+            icsel.ImageSize = new(200, 64);
+            icsel.Init(SelectorStyle.Image, ImageFit.None); // these
 
             // Init the image list.
             var sdir = MiscUtils.GetSourcePath();
@@ -47,11 +54,11 @@ namespace Ephemera.IconicSelector.Test
             var bmp2 = new Bitmap(Path.Combine(sdir, "Files", "color-picker-small.png"));
 
             // Default image - rainbow.
-            using PixelBitmap pbmp = new(IMAGE_SIZE, IMAGE_SIZE);
-            int incr = 256 / IMAGE_SIZE;
-            for (int y = 0; y < IMAGE_SIZE; y++)
+            using PixelBitmap pbmp = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            int incr = 256 / DEF_IMAGE_SIZE;
+            for (int y = 0; y < DEF_IMAGE_SIZE; y++)
             {
-                for (int x = 0; x < IMAGE_SIZE; x++)
+                for (int x = 0; x < DEF_IMAGE_SIZE; x++)
                 {
                     pbmp.SetPixel(x, y, Color.FromArgb(255, x * incr % 256, y * incr % 256, 150));
                 }

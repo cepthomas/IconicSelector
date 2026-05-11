@@ -67,7 +67,6 @@ namespace Ephemera.IconicSelector.Test
             icsel.AutoScroll = true;
             icsel.BorderStyle = BorderStyle.FixedSingle;
             icsel.DrawFont = new Font("Calibri", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            icsel.ImageSize = 32;
             icsel.LeftMouseClick = MouseFunction.Click;
             icsel.Location = new Point(12, 73);
             icsel.Name = "icsel";

@@ -31,7 +31,7 @@ namespace Ephemera.IconicSelector
         public bool AllowExternalDrop { get; set; } = false;
 
         /// <summary>Image size.</summary>
-        public int ImageSize { get; set; } = 32;
+        public Size ImageSize { get; set; } = new(32, 32);
 
         /// <summary>Cosmetics.</summary>
         public Font DrawFont { get; set; } = new("Calibri", 11, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -50,6 +50,9 @@ namespace Ephemera.IconicSelector
         /// <summary>Current config.</summary>
         SelectorStyle _style = SelectorStyle.Icon;
 
+        /// <summary>Current config.</summary>
+        ImageFit _fit = ImageFit.None;
+
         /// <summary>All entries in the collection.</summary>
         readonly List<ItemDisplay> _itemds = [];
 
@@ -57,10 +60,10 @@ namespace Ephemera.IconicSelector
         Bitmap _defaultImage = new(16, 16);
 
         /// <summary>ItemDisplay geometry.</summary>
-        Rectangle _itemdImageRect;
+        DisplayRect _itemdImageRect = new();
 
         /// <summary>ItemDisplay geometry.</summary>
-        Rectangle _itemdTextRect;
+        DisplayRect _itemdTextRect = new();
 
         /// <summary>ItemDisplay geometry.</summary>
         Size _itemdSize;
@@ -87,47 +90,55 @@ namespace Ephemera.IconicSelector
             SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
             AllowDrop = true;
             AutoScroll = true;
-            Init(SelectorStyle.Icon);
+            // Initial default mode.
+            Init(SelectorStyle.Icon, ImageFit.None);
         }
 
         /// <summary>
         /// Constructor.
         /// </summary>
-        public void Init(SelectorStyle style)
+        public void Init(SelectorStyle style, ImageFit fit)
         {
             _style = style;
+            _fit = fit;
 
             // Figure geometry.
-            Size tSize = new(2 * ImageSize, ImageSize);
-            Size iSize = new(ImageSize, ImageSize);
-            Point iLoc = new();
-            Point tLoc = new();
-
             switch (style)
             {
-                case SelectorStyle.Tile:
-                    iLoc = new(Pad, Pad);
-                    tLoc = new(_itemdImageRect.Right + Pad, Pad);
+                case SelectorStyle.Icon:
+                    {
+                        _itemdImageRect = new(Pad + ImageSize.Width / 2, Pad, ImageSize.Width, ImageSize.Height);
+                        _itemdTextRect = new(Pad, _itemdImageRect.Bottom + Pad, 2 * ImageSize.Width, ImageSize.Height);
+                        _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
+                    }
                     break;
 
-                case SelectorStyle.Icon:
-                    iLoc = new(Pad + ImageSize / 2, Pad);
-                    tLoc = new(Pad, _itemdImageRect.Bottom + Pad);
+                case SelectorStyle.Tile:
+                    {
+                        _itemdImageRect = new(Pad, Pad, ImageSize.Width, ImageSize.Height);
+                        _itemdTextRect = new(_itemdImageRect.Right + Pad, Pad, 2 * ImageSize.Width, ImageSize.Height);
+                        _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
+                    }
+                    break;
+
+                case SelectorStyle.Image:
+                    {
+                        _itemdImageRect = new(0, 0, ImageSize.Width, ImageSize.Height);
+                        _itemdTextRect = new(); // not used
+                        _itemdSize = new(ImageSize.Width, ImageSize.Height);
+                    }
                     break;
             }
 
-            _itemdImageRect = new(iLoc, iSize);
-            _itemdTextRect = new(tLoc, tSize);
-            _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
-
-            // Make a default image. Big X.
-            _defaultImage = new(ImageSize, ImageSize);
+            // Make a default image - big X.
+            _defaultImage = new(ImageSize.Width, ImageSize.Height);
             using Graphics gr = Graphics.FromImage(_defaultImage);
             Pen pen = new(Color.Purple, 4);
             int pad = 2;
-            int sz = ImageSize - 2 * pad;
-            gr.DrawLine(pen, pad, pad, sz, sz);
-            gr.DrawLine(pen, pad, sz, sz, pad);
+            int szx = ImageSize.Width - 2 * pad;
+            int szy = ImageSize.Height - 2 * pad;
+            gr.DrawLine(pen, pad, pad, szx, szy);
+            gr.DrawLine(pen, pad, szy, szx, pad);
         }
 
         /// <summary>
@@ -156,12 +167,25 @@ namespace Ephemera.IconicSelector
         /// <param name="index">Where to insert. -1 is append</param>
         public void AddItem(string text, Bitmap? bmp, object value, int index = -1)
         {
-            Item item = new(text, bmp is null ? _defaultImage : bmp.Resize(ImageSize, ImageSize), value);
+            // TODO _fit
+            ///// <summary>Client is in charge of images</summary>
+            //None,
+            ///// <summary>Rendered image height from client, width scaled</summary>
+            //FitHeight,
+            ///// <summary>Rendered image width from client, height scaled</summary>
+            //FitWidth,
+            ///// <summary>Use all available space</summary>
+            //Fill,
+
+
+            Item item = new(text, bmp is null ? _defaultImage : bmp.Resize(ImageSize.Width, ImageSize.Height), value);
+
+
 
             ItemDisplay itemd = new(item)
             {
                 TargetColor = TargetColor,
-                ImageLoc = _itemdImageRect.Location,
+                ImageRect = _itemdImageRect,
                 TextRect = _itemdTextRect,
                 Size = _itemdSize,
             };
