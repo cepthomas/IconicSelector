@@ -166,8 +166,7 @@ namespace Ephemera.IconicSelector
             {
                 using StringFormat sfmt = new() { LineAlignment = StringAlignment.Center, Alignment = StringAlignment.Center };
                 pe.Graphics.DrawString(Item.Caption, Font, Brushes.Black, TextRect.WinRect, sfmt);
-                pe.Graphics.DrawRectangle(Pens.Green, TextRect.WinRect);
-
+                //pe.Graphics.DrawRectangle(Pens.Green, TextRect.WinRect);
             }
 
             base.OnPaint(pe);

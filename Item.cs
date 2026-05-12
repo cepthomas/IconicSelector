@@ -20,10 +20,10 @@ namespace Ephemera.IconicSelector
         /// <summary>Displayed text</summary>
         public string Caption { get; set; } = "";
 
-        /// <summary>Associated image or null if not available</summary>
+        /// <summary>Associated image.</summary>
         public Bitmap Bitmap { get; set; }
 
-        /// <summary>Meaningful for client use</summary>
+        /// <summary>Carries data maningful to client.</summary>
         public object Value { get; set; } = "???";
 
         /// <summary>Normal constructor</summary>

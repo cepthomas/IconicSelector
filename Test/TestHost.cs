@@ -37,21 +37,31 @@ namespace Ephemera.IconicSelector.Test
 
             const int DEF_IMAGE_SIZE = 32;
 
-            icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-            icsel.Init(SelectorStyle.Icon, ImageFit.None);
+            // Style = icon
+            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            //icsel.Init(SelectorStyle.Icon);
 
-            //icsel.ImageSize = new(IMAGE_SIZE, IMAGE_SIZE);
-            //icsel.Init(SelectorStyle.Tile, ImageFit.None);
+            // Style = tile
+            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            //icsel.Init(SelectorStyle.Tile);
 
+            // Style = fit
             //icsel.ImageSize = new(200, 64);
-            //icsel.Init(SelectorStyle.Image, ImageFit.None); // these FitHeight, FitWidth, Fill,
+            //icsel.Init(SelectorStyle.Fit);
+
+            // Style = image
+            icsel.ImageSize = new(128, 64);
+            icsel.Init(SelectorStyle.Image);
+
 
             // Init the image list.
             var sdir = MiscUtils.GetSourcePath();
 
             var bmp1 = new Bitmap(Path.Combine(sdir, "Files", "glyphicons-22-snowflake.png"));
-            using var icon = new Icon(Path.Combine(sdir, "Files", "crabe.ico"));
             var bmp2 = new Bitmap(Path.Combine(sdir, "Files", "color-picker-small.png"));
+            using var icon = new Icon(Path.Combine(sdir, "Files", "crabe.ico"));
+            var bmp3 = icon.ToBitmap();
+            var bmp4 = new Bitmap(Path.Combine(sdir, "Files", "color-picker.png"));
 
             // Default image - rainbow.
             using PixelBitmap pbmp = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
@@ -65,8 +75,8 @@ namespace Ephemera.IconicSelector.Test
             }
             var defbmp = pbmp.GetBitmap();
 
-            // Add entries to selector
-            Bitmap?[] bmps = [bmp1, icon.ToBitmap(), bmp2, defbmp, null];
+            // Add entries to selector. Null forces selector default - X.
+            Bitmap?[] bmps = [bmp1, bmp2, bmp3, bmp4, defbmp, null];
             var rand = new Random();
             for (int i = 0; i < 15; i++)
             {

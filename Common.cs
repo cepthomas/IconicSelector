@@ -17,31 +17,20 @@ namespace Ephemera.IconicSelector
     /// <summary>Supported styles.</summary>
     public enum SelectorStyle
     {
-        /// <summary>Icon of ImageSize Bitmap above, text of 2 X ImageSize below</summary>
+        /// <summary>Icon of ImageSize Bitmap above, text block below</summary>
         Icon,
-        /// <summary>Icon of ImageSize Bitmap left, text of 2 X ImageSize right</summary>
+        /// <summary>Icon of ImageSize Bitmap left, text block right</summary>
         Tile,
-        /// <summary>Fill with Bitmap of ImageSize</summary>
-        Image
-    }
-
-    /// <summary>Image fitting to ImageSize.</summary>
-    public enum ImageFit
-    {
-        /// <summary>Client is in charge of images</summary>
-        None,
-        /// <summary>Rendered image height from client, width scaled</summary>
-        FitHeight,
-        /// <summary>Rendered image width from client, height scaled</summary>
-        FitWidth,
-        /// <summary>Use all available space</summary>
-        Fill,
+        /// <summary>Verbatim</summary>
+        Image,
+        /// <summary>Fill with Bitmap TODO hides the target indication - need to rethink</summary>
+        Fit
     }
 
     /// <summary></summary>
     public enum MouseFunction { SingleSelect, MultiSelect, Click }
 
-    /// <summary>Custom rectangle for this application.</summary>
+    /// <summary>Custom rectangle for this application. TODO or just use builtin?</summary>
     public class DisplayRect
     {
         public int Left { get; init; } = -1;
@@ -57,7 +46,7 @@ namespace Ephemera.IconicSelector
             IsValid = false;
         }
 
-        /// <summary>Normal constructor - invalid.</summary>
+        /// <summary>Normal constructor.</summary>
         public DisplayRect(int left, int top, int width, int height)
         {
             IsValid = top >= 0 && left >= 0 && width >= 0 && height >= 0;

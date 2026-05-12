@@ -51,9 +51,6 @@ namespace Ephemera.IconicSelector
         /// <summary>Current config.</summary>
         SelectorStyle _style = SelectorStyle.Icon;
 
-        /// <summary>Current config.</summary>
-        ImageFit _fit = ImageFit.None;
-
         /// <summary>All entries in the collection.</summary>
         readonly List<ItemDisplay> _itemds = [];
 
@@ -92,16 +89,16 @@ namespace Ephemera.IconicSelector
             AllowDrop = true;
             AutoScroll = true;
             // Initial default mode.
-            Init(SelectorStyle.Icon, ImageFit.None);
+            Init(SelectorStyle.Icon);
         }
 
         /// <summary>
-        /// Constructor.
+        /// Constructor. Determines geometry of display elements.
+        /// <param name="style">Our flavor.</param>
         /// </summary>
-        public void Init(SelectorStyle style, ImageFit fit)
+        public void Init(SelectorStyle style)
         {
             _style = style;
-            _fit = fit;
 
             // Figure geometry.
             switch (style)
@@ -123,6 +120,7 @@ namespace Ephemera.IconicSelector
                     break;
 
                 case SelectorStyle.Image:
+                case SelectorStyle.Fit:
                     {
                         _itemdImageRect = new(0, 0, ImageSize.Width, ImageSize.Height);
                         _itemdTextRect = new(); // not used
@@ -165,23 +163,51 @@ namespace Ephemera.IconicSelector
         /// <param name="text">For display below/next to image</param>
         /// <param name="bmp">Bitmap</param>
         /// <param name="value">Meaningful for client use</param>
-        /// <param name="index">Where to insert. -1 is append</param>
+        /// <param name="index">Where to insert, -1 is append</param>
         public void AddItem(string text, Bitmap? bmp, object value, int index = -1)
         {
-            // TODO _fit =>   see ClipDisplay
-            ///// <summary>Client is in charge of images</summary>
-            //None,
-            ///// <summary>Rendered image height from client, width scaled</summary>
-            //FitHeight,
-            ///// <summary>Rendered image width from client, height scaled</summary>
-            //FitWidth,
-            ///// <summary>Use all available space</summary>
-            //Fill,
+            // Make a new item. Maybe adjust the image.
+            bmp ??= _defaultImage;
 
+            switch (_style)
+            {
+                case SelectorStyle.Icon:
+                    // Image as is.
+                    break;
 
-            Item item = new(text, bmp is null ? _defaultImage : bmp.Resize(ImageSize.Width, ImageSize.Height), value);
+                case SelectorStyle.Tile:
+                    // Image as is.
+                    break;
 
+                case SelectorStyle.Image:
+                    // Copy pixels staring from 0,0.
+                    Bitmap bmpout = new(ImageSize.Width, ImageSize.Height);
+                    using (Graphics gr = Graphics.FromImage(bmpout))
+                    {
+                        gr.Clear(Color.Transparent);
+                    }
 
+                    // TODO stupid/slow, fix and add to PixelBitmap.
+                    for (int x = 0; x < bmpout.Width; x++)
+                    {
+                        for (int y = 0; y < bmpout.Height; y++)
+                        {
+                            if (x < bmp.Width && y < bmp.Height)
+                            {
+                                bmpout.SetPixel(x, y, bmp.GetPixel(x, y));
+                            }
+                        }
+                    }
+
+                    bmp = bmpout;
+                    break;
+
+                case SelectorStyle.Fit:
+                    bmp = bmp.Resize(ImageSize.Width, ImageSize.Height);
+                    break;
+            }
+
+            Item item = new(text, bmp, value);
 
             ItemDisplay itemd = new(item)
             {
@@ -212,7 +238,7 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// 
+        /// Item management.
         /// </summary>
         public void RemoveItem(int index)
         {
@@ -224,7 +250,7 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// 
+        /// Item management.
         /// </summary>
         public void RemoveSelectedItems()
         {
@@ -363,7 +389,6 @@ namespace Ephemera.IconicSelector
             {
                 Trace?.Invoke(this, $"Itemd_DragEnter() index:{index}");
                 e.Effect = e.AllowedEffect;
-
                 SetTarget(index);
             }
 
@@ -376,7 +401,7 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// Moves the insertion mark as the item is dragged.
+        /// Moves the insertion indicator as the item is dragged.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -390,7 +415,7 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// Removes the insertion mark when the mouse leaves the control.
+        /// Removes the insertion indicator when the mouse leaves the control.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>d
@@ -406,7 +431,7 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// Moves the item to the location of the insertion mark.
+        /// Moves the source item to the insertion indicator.
         /// Handles drag sources of internal items and external files.
         /// </summary>
         /// <param name="sender"></param>
@@ -425,8 +450,9 @@ namespace Ephemera.IconicSelector
 
             // What do we have here?
             var dt = e.Data.GetFormats();
+            bool handled = false;
 
-            if (dt.Contains("System.Int32"))
+            if (!handled && dt.Contains("System.Int32"))
             {
                 var idata = e.Data.GetData(typeof(int));
                 int srcIndex = (int)idata!;
@@ -440,10 +466,10 @@ namespace Ephemera.IconicSelector
 
                 SetTarget(-1);
 
-                return;
+                handled = true;
             }
 
-            if (dt.Contains(DataFormats.FileDrop) && AllowExternalDrop)
+            if (!handled && dt.Contains(DataFormats.FileDrop) && AllowExternalDrop)
             {
                 var fdata = e.Data.GetData(DataFormats.FileDrop);
                 foreach (string target in (string[])fdata!)
@@ -453,10 +479,11 @@ namespace Ephemera.IconicSelector
                     var fn = Path.GetFileName(target);
                     AddItem(fn, icon?.ToBitmap(), target);
                 }
-                return;
+
+                handled = true;
             }
 
-            if (dt.Contains(DataFormats.Html) && AllowExternalDrop)
+            if (!handled && dt.Contains(DataFormats.Html) && AllowExternalDrop)
             {
                 var hdata = e.Data.GetData(DataFormats.Html);
 
@@ -497,10 +524,13 @@ namespace Ephemera.IconicSelector
                     }
                 });
 
-                return;
+                handled = true;
             }
 
-            // else ignore
+            if (!handled)
+            {
+                // ignore
+            }
 
             Invalidate();
         }
@@ -537,7 +567,7 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// Get the index in the collection
+        /// Get the index in the collection.
         /// </summary>
         /// <param name="item">ItemDisplay to test</param>
         /// <returns>Index or -1 if invalid</returns>
