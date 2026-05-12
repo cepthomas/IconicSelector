@@ -47,6 +47,12 @@ namespace Ephemera.IconicSelector
         public int Spacing { get; set; } = 10;
         #endregion
 
+
+
+        int _insertIndex = -1;
+
+
+
         #region Fields
         /// <summary>Current config.</summary>
         SelectorStyle _style = SelectorStyle.Icon;
@@ -306,6 +312,19 @@ namespace Ephemera.IconicSelector
                 _itemds[i].Invalidate();
             }
 
+            if (_insertIndex != -1)
+            {
+                var itemd = _itemds[_insertIndex];
+                var loc = itemd.Location;
+
+                //var pt = PointToClient(new(0, 0));
+                using Pen pen = new(Color.Purple, 4);
+
+                pe.Graphics.DrawLine(pen, loc.X - 3, loc.Y, loc.X - 3, loc.Y + itemd.Height);
+                //pe.Graphics.DrawLine(Item.Caption, Font, Brushes.Black, TextRect.WinRect, sfmt);
+
+            }
+
             base.OnPaint(pe);
         }
         #endregion
@@ -397,6 +416,8 @@ namespace Ephemera.IconicSelector
                 if (_itemds[i].IsTarget) Trace?.Invoke(this, $"IsTarget:{i}");
             }
 
+            _insertIndex = -1;
+
             Invalidate();
         }
 
@@ -407,11 +428,49 @@ namespace Ephemera.IconicSelector
         /// <param name="e"></param>
         void Itemd_DragOver(object? sender, DragEventArgs e)
         {
-            // Nothing?
-            //int index = GetItemIndex(sender);
-            //var itemd = _itemds[index];
+            int index = GetItemIndex(sender);
+            var itemd = _itemds[index];
             //Trace?.Invoke(this, $"Itemd_DragOver() index:{index} IsTarget:{itemd.IsTarget}");
-            //Invalidate();
+
+            var itemdPoint = itemd.PointToClient(new Point(e.X, e.Y));
+            //var rect2 = itemd.ClientRectangle;
+            //Trace?.Invoke(this, $">>> x:{targetPoint2.X} y:{targetPoint2.Y}");
+
+            if (itemdPoint.Y < (itemd.Width << 2))
+            {
+                _insertIndex = index;
+            }
+            else if (itemdPoint.Y > (itemd.Width / 2) + (itemd.Width << 2))
+            {
+                _insertIndex = index + 1;
+            }
+            else
+            {
+                _insertIndex = -1;
+            }
+
+
+
+
+            /* TODO Retrieve the index of the item closest to the mouse pointer. -1 means over drag item.
+            int closestItem = _lv.InsertionMark.NearestIndex(targetPoint);
+            //Trace($"closestItem:{closestItem}");
+
+            if (closestItem > -1)
+            {
+                // Determine whether the mouse pointer is to the left or the right of the midpoint of
+                // the closest item and set the InsertionMark.AppearsAfterItem property accordingly.
+                Rectangle itemBounds = _lv.GetItemRect(closestItem);
+                _lv.InsertionMark.AppearsAfterItem = targetPoint.X > itemBounds.Left + (itemBounds.Width / 2);
+            }
+
+            // Set the location of the insertion mark. -1 makes the insertion mark disappear.
+            _lv.InsertionMark.Index = closestItem;
+            */
+
+
+
+            Invalidate();
         }
 
         /// <summary>
@@ -426,6 +485,7 @@ namespace Ephemera.IconicSelector
             Trace?.Invoke(this, $"Itemd_DragLeave() index:{index}");
 
             SetTarget(-1);
+            _insertIndex = -1;
 
             Invalidate();
         }
@@ -531,6 +591,8 @@ namespace Ephemera.IconicSelector
             {
                 // ignore
             }
+
+            _insertIndex = -1;
 
             Invalidate();
         }

@@ -46,12 +46,12 @@ namespace Ephemera.IconicSelector.Test
             //icsel.Init(SelectorStyle.Tile);
 
             // Style = fit
-            //icsel.ImageSize = new(200, 64);
-            //icsel.Init(SelectorStyle.Fit);
+            icsel.ImageSize = new(200, 64);
+            icsel.Init(SelectorStyle.Fit);
 
             // Style = image
-            icsel.ImageSize = new(128, 64);
-            icsel.Init(SelectorStyle.Image);
+            //icsel.ImageSize = new(128, 64);
+            //icsel.Init(SelectorStyle.Image);
 
 
             // Init the image list.
