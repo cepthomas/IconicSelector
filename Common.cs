@@ -38,39 +38,39 @@ namespace Ephemera.IconicSelector
         Click,
     }
 
-    /// <summary>Custom rectangle for this application. TODOI or just use builtin?</summary>
-    public class DisplayRect
-    {
-        public int Left { get; init; } = -1;
-        public int Top { get; init; } = -1;
-        public int Right { get; init; } = -1;
-        public int Bottom { get; init; } = -1;
-        public Rectangle WinRect { get { return new Rectangle(Left, Top, Right - Left, Bottom - Top); } }
-        public bool IsValid { get; init; } = false;
+    ///// <summary>Custom rectangle for this application. TODOI or just use builtin?</summary>
+    //public class DisplayRect
+    //{
+    //    public int Left { get; init; } = -1;
+    //    public int Top { get; init; } = -1;
+    //    public int Right { get; init; } = -1;
+    //    public int Bottom { get; init; } = -1;
+    //    public Rectangle WinRect { get { return new Rectangle(Left, Top, Right - Left, Bottom - Top); } }
+    //    public bool IsValid { get; init; } = false;
 
-        /// <summary>Default constructor - invalid.</summary>
-        public DisplayRect()
-        {
-            IsValid = false;
-        }
+    //    /// <summary>Default constructor - invalid.</summary>
+    //    public DisplayRect()
+    //    {
+    //        IsValid = false;
+    //    }
 
-        /// <summary>Normal constructor.</summary>
-        public DisplayRect(int left, int top, int width, int height)
-        {
-            IsValid = top >= 0 && left >= 0 && width >= 0 && height >= 0;
-            if (!IsValid) throw new ArgumentException("Invalid args");
-            Left = left;
-            Top = top;
-            Right = left + width;
-            Bottom = top + height;
-        }
+    //    /// <summary>Normal constructor.</summary>
+    //    public DisplayRect(int left, int top, int width, int height)
+    //    {
+    //        IsValid = top >= 0 && left >= 0 && width >= 0 && height >= 0;
+    //        if (!IsValid) throw new ArgumentException("Invalid args");
+    //        Left = left;
+    //        Top = top;
+    //        Right = left + width;
+    //        Bottom = top + height;
+    //    }
 
-        /// <summary>Read me.</summary>
-        public override string ToString()
-        {
-            return IsValid ? $"L:{Left} T:{Top} R:{Right} B:{Bottom}" : "Invalid";
-        }
-    }
+    //    /// <summary>Read me.</summary>
+    //    public override string ToString()
+    //    {
+    //        return IsValid ? $"L:{Left} T:{Top} R:{Right} B:{Bottom}" : "Invalid";
+    //    }
+    //}
 
     /// <summary>User selection(s) have changed.</summary>
     public class SelectionEventArgs : EventArgs

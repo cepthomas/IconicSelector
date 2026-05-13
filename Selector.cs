@@ -55,10 +55,10 @@ namespace Ephemera.IconicSelector
         Bitmap _defaultImage = new(16, 16);
 
         /// <summary>ItemDisplay geometry.</summary>
-        DisplayRect _itemdImageRect = new();
+        Rectangle _itemdImageRect = new();
 
         /// <summary>ItemDisplay geometry.</summary>
-        DisplayRect _itemdTextRect = new();
+        Rectangle _itemdTextRect = new();
 
         /// <summary>ItemDisplay geometry.</summary>
         Size _itemdSize;

@@ -27,10 +27,10 @@ namespace Ephemera.IconicSelector
         public Item Item { get; init; }
 
         /// <summary>Geometry.</summary>
-        public DisplayRect ImageRect { get; init; } = new();
+        public Rectangle ImageRect { get; init; } = new();
 
         /// <summary>Geometry.</summary>
-        public DisplayRect TextRect { get; init; } = new();
+        public Rectangle TextRect { get; init; } = new();
 
         /// <summary>Cosmetics.</summary>
         public Color IndicatorColor { get; set; } = Color.Aqua;
@@ -155,15 +155,15 @@ namespace Ephemera.IconicSelector
             }
 
             // Main content.
-            if (ImageRect.IsValid)
+            if (!ImageRect.IsEmpty)
             {
-                pe.Graphics.DrawImage(Item.Bitmap, ImageRect.WinRect);
+                pe.Graphics.DrawImage(Item.Bitmap, ImageRect);
             }
 
-            if (TextRect.IsValid)
+            if (!ImageRect.IsEmpty)
             {
                 using StringFormat sfmt = new() { LineAlignment = StringAlignment.Center, Alignment = StringAlignment.Center };
-                pe.Graphics.DrawString(Item.Caption, Font, Brushes.Black, TextRect.WinRect, sfmt);
+                pe.Graphics.DrawString(Item.Caption, Font, Brushes.Black, TextRect, sfmt);
             }
 
             base.OnPaint(pe);
