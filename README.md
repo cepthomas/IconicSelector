@@ -18,13 +18,3 @@ https://learn.microsoft.com/en-us/dotnet/desktop/winforms/controls/how-to-displa
 - NotSupportedException   Raised when a method or operation is not supported.
 - TimeoutException    The time interval allotted to an operation has expired.
 
-
-- TODO icons?:
-    <PropertyGroup>
-        <OutputType>WinExe</OutputType>
-        <ApplicationIcon>canard.ico</ApplicationIcon>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <Content Include="canard.ico" />
-    </ItemGroup>

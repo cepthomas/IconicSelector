@@ -23,14 +23,14 @@ namespace Ephemera.IconicSelector
         Tile,
         /// <summary>Verbatim</summary>
         Image,
-        /// <summary>Fill with Bitmap TODO hides the target indication - need to rethink</summary>
+        /// <summary>Fill with Bitmap</summary>
         Fit
     }
 
     /// <summary></summary>
     public enum MouseFunction { SingleSelect, MultiSelect, Click }
 
-    /// <summary>Custom rectangle for this application. TODO or just use builtin?</summary>
+    /// <summary>Custom rectangle for this application. TODOI or just use builtin?</summary>
     public class DisplayRect
     {
         public int Left { get; init; } = -1;
@@ -77,5 +77,16 @@ namespace Ephemera.IconicSelector
     {
         /// <summary>The new item</summary>
         public Item NewItem { get; set; } = item;
+    }
+
+    /// <summary>User drag-dropped something from elsewhere.</summary>
+    /// <remarks>Default constructor.</remarks>
+    public class TraceEventArgs() : EventArgs
+    {
+        /// <summary>Log line.</summary>
+        public string Line { get; set; } = "";
+
+        /// <summary>Stuff moving too fast for Line.</summary>
+        public string State { get; set; } = "";
     }
 }

@@ -7,6 +7,7 @@ using Ephemera.NBagOfTricks;
 using Ephemera.IconicSelector;
 using System.Net.Http;
 using System.Drawing.Imaging;
+using System.Collections.Generic;
 
 
 #pragma warning disable CS0168 // Variable is declared but never used
@@ -15,6 +16,8 @@ namespace Ephemera.IconicSelector.Test
 {
     public partial class TestHost : Form
     {
+        readonly Dictionary<string, string> _states = [];
+
         public TestHost()
         {
             InitializeComponent();
@@ -31,23 +34,23 @@ namespace Ephemera.IconicSelector.Test
 
             icsel.AllowExternalDrop = true;
             icsel.LeftMouseClick = MouseFunction.Click;
-            icsel.TargetColor = Color.LightYellow;
+            icsel.IndicatorColor = Color.Red;
             icsel.Pad = 8;
             icsel.LeftMouseClick = MouseFunction.SingleSelect;
 
             const int DEF_IMAGE_SIZE = 32;
 
             // Style = icon
-            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-            //icsel.Init(SelectorStyle.Icon);
+            icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            icsel.Init(SelectorStyle.Icon);
 
             // Style = tile
             //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
             //icsel.Init(SelectorStyle.Tile);
 
             // Style = fit
-            icsel.ImageSize = new(200, 64);
-            icsel.Init(SelectorStyle.Fit);
+            //icsel.ImageSize = new(200, 64);
+            //icsel.Init(SelectorStyle.Fit);
 
             // Style = image
             //icsel.ImageSize = new(128, 64);
@@ -98,11 +101,31 @@ namespace Ephemera.IconicSelector.Test
 
             icsel.Trace += (sender, e) =>
             {
-                tvInfo.Append($"TRACE -> [{e}]");
+                if (e.Line.Length > 0)
+                {
+                    tvInfo.Append($"-> [{e.Line}]");
+                }
+                if (e.State.Length > 0)
+                {
+                    var parts = e.State.SplitByToken(" ");
+                    if (!_states.ContainsKey(parts[0]))
+                    {
+                        _states.Add(parts[0], e.State);
+                    }
+                    else
+                    {
+                        _states[parts[0]] = e.State;
+                    }
+
+                    tvState.Clear();
+                    _states.Values.ForEach(st => tvState.Append(st));
+                }
             };
 
             base.OnLoad(e);
         }
+
+
 
         async void BtnGo1_Click(object sender, EventArgs e)
         {

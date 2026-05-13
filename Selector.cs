@@ -19,14 +19,14 @@ using Ephemera.NBagOfUis;
 namespace Ephemera.IconicSelector
 {
     /// <summary>Master control.</summary>
-    public class Selector : ScrollableControl // TODO UserControl  https://www.cyotek.com/blog/creating-a-custom-single-axis-scrolling-control-in-winforms
+    public class Selector : ScrollableControl //UserControl  TODOI scroll   https://www.cyotek.com/blog/creating-a-custom-single-axis-scrolling-control-in-winforms
     {
         #region Properties
         /// <summary>What the mouse click does.</summary>
         public MouseFunction LeftMouseClick { get; set; } = MouseFunction.Click;
 
-        /// <summary>Drag and drop location.</summary>
-        public bool InsertAfter { get; set; } = false;
+        // /// <summary>Drag and drop location.</summary>
+        // public bool InsertAfter { get; set; } = false;
 
         /// <summary>Allow drag and drop (files) from other applications.</summary>
         public bool AllowExternalDrop { get; set; } = false;
@@ -38,7 +38,7 @@ namespace Ephemera.IconicSelector
         public Font DrawFont { get; set; } = new("Calibri", 11, FontStyle.Regular, GraphicsUnit.Point, 0);
 
         /// <summary>Cosmetics.</summary>
-        public Color TargetColor { get; set; } = Color.Aqua;
+        public Color IndicatorColor { get; set; } = Color.Purple;
 
         /// <summary>Visual space at edges.</summary>
         public int Pad { get; set; } = 4;
@@ -46,12 +46,6 @@ namespace Ephemera.IconicSelector
         /// <summary>Space between items</summary>
         public int Spacing { get; set; } = 10;
         #endregion
-
-
-
-        int _insertIndex = -1;
-
-
 
         #region Fields
         /// <summary>Current config.</summary>
@@ -71,6 +65,9 @@ namespace Ephemera.IconicSelector
 
         /// <summary>ItemDisplay geometry.</summary>
         Size _itemdSize;
+
+        /// <summary>Where to move/insert item.</summary>
+        int _insertIndex = -1;
         #endregion
 
         #region Events
@@ -81,7 +78,7 @@ namespace Ephemera.IconicSelector
         public event EventHandler<DroppedTargetEventArgs>? DroppedTarget;
 
         /// <summary>Debug hook</summary>
-        public event EventHandler<string>? Trace;
+        public event EventHandler<TraceEventArgs>? Trace;
         #endregion
 
         #region Lifecycle
@@ -94,7 +91,7 @@ namespace Ephemera.IconicSelector
             SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
             AllowDrop = true;
             AutoScroll = true;
-            // Initial default mode.
+            // Default mode.
             Init(SelectorStyle.Icon);
         }
 
@@ -138,7 +135,7 @@ namespace Ephemera.IconicSelector
             // Make a default image - big X.
             _defaultImage = new(ImageSize.Width, ImageSize.Height);
             using Graphics gr = Graphics.FromImage(_defaultImage);
-            Pen pen = new(Color.Purple, 4);
+            Pen pen = new(IndicatorColor, 4);
             int pad = 2;
             int szx = ImageSize.Width - 2 * pad;
             int szy = ImageSize.Height - 2 * pad;
@@ -193,7 +190,7 @@ namespace Ephemera.IconicSelector
                         gr.Clear(Color.Transparent);
                     }
 
-                    // TODO stupid/slow, fix and add to PixelBitmap.
+                    // Stupid/slow but infrequent and small images. TODO.
                     for (int x = 0; x < bmpout.Width; x++)
                     {
                         for (int y = 0; y < bmpout.Height; y++)
@@ -217,7 +214,7 @@ namespace Ephemera.IconicSelector
 
             ItemDisplay itemd = new(item)
             {
-                TargetColor = TargetColor,
+                IndicatorColor = IndicatorColor,
                 ImageRect = _itemdImageRect,
                 TextRect = _itemdTextRect,
                 Size = _itemdSize,
@@ -318,7 +315,7 @@ namespace Ephemera.IconicSelector
                 var loc = itemd.Location;
 
                 //var pt = PointToClient(new(0, 0));
-                using Pen pen = new(Color.Purple, 4);
+                using Pen pen = new(IndicatorColor, 4);
 
                 pe.Graphics.DrawLine(pen, loc.X - 3, loc.Y, loc.X - 3, loc.Y + itemd.Height);
                 //pe.Graphics.DrawLine(Item.Caption, Font, Brushes.Black, TextRect.WinRect, sfmt);
@@ -378,6 +375,50 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
+
+
+        void TraceLine(string line)
+        {
+            Trace?.Invoke(this, new() { Line = line });
+        }
+
+        void TraceState(string state)
+        {
+            Trace?.Invoke(this, new() { State = state });
+        }
+
+
+        void SetInsert(int index, int xpos)
+        {
+            if (index == -1)
+            {
+                _insertIndex = -1;
+                TraceState($"Near nada 1");
+            }
+            else if (xpos < (_itemdSize.Width / 4)) // Show indicator if it is near edges.
+            {
+                _insertIndex = index;
+                TraceState($"Near left");
+            }
+            else if (xpos > (_itemdSize.Width * 3 / 4))
+            {
+                _insertIndex = index + 1;
+                TraceState($"Near right");
+            }
+            else
+            {
+                _insertIndex = -1;
+                TraceState($"Near nada 2");
+            }
+
+            TraceState($"SetInsert index:{index} xpos:{xpos} _insertIndex:{_insertIndex} ");
+        }
+
+
+
+
+
+
         #region Drag and drop
         /// <summary>
         /// Starts the drag-and-drop operation when an item is dragged.
@@ -388,7 +429,7 @@ namespace Ephemera.IconicSelector
         {
             int index = GetItemIndex(sender);
 
-            Trace?.Invoke(this, $"Itemd_ItemDragDropStart() index:{index}");
+            TraceLine($"Itemd_ItemDragDropStart() index:{index}");
 
             DoDragDrop(index, DragDropEffects.Move);
         }
@@ -406,17 +447,16 @@ namespace Ephemera.IconicSelector
 
             if (srcIndex is not null && index != (int)srcIndex)
             {
-                Trace?.Invoke(this, $"Itemd_DragEnter() index:{index}");
+                TraceLine($"Itemd_DragEnter() index:{index}");
                 e.Effect = e.AllowedEffect;
-                SetTarget(index);
             }
 
-            for (int i = 0; i < _itemds.Count; i++)
-            {
-                if (_itemds[i].IsTarget) Trace?.Invoke(this, $"IsTarget:{i}");
-            }
+            //for (int i = 0; i < _itemds.Count; i++)
+            //{
+            //    if (_itemds[i].IsTarget) Trace?.Invoke(this, $"IsTarget:{i}");
+            //}
 
-            _insertIndex = -1;
+            SetInsert(-1, -1);
 
             Invalidate();
         }
@@ -430,47 +470,23 @@ namespace Ephemera.IconicSelector
         {
             int index = GetItemIndex(sender);
             var itemd = _itemds[index];
-            //Trace?.Invoke(this, $"Itemd_DragOver() index:{index} IsTarget:{itemd.IsTarget}");
+            
+            TraceState($"Itemd_DragOver index:{index} _insertIndex:{_insertIndex} X:{e.X} Y:{e.Y}");
 
-            var itemdPoint = itemd.PointToClient(new Point(e.X, e.Y));
-            //var rect2 = itemd.ClientRectangle;
-            //Trace?.Invoke(this, $">>> x:{targetPoint2.X} y:{targetPoint2.Y}");
-
-            if (itemdPoint.Y < (itemd.Width << 2))
+            //if (index != _insertIndex)
             {
-                _insertIndex = index;
+                //var itemdPoint = itemd.PointToClient(new Point(e.X, e.Y));
+
+                var itemdPoint = itemd.PointToClient(new Point(e.X, e.Y));
+
+                //var rect2 = itemd.ClientRectangle;
+
+                //Trace?.Invoke(this, $">>> x:{targetPoint2.X} y:{targetPoint2.Y}");
+
+                SetInsert(index, itemdPoint.X);
+
+                Invalidate();
             }
-            else if (itemdPoint.Y > (itemd.Width / 2) + (itemd.Width << 2))
-            {
-                _insertIndex = index + 1;
-            }
-            else
-            {
-                _insertIndex = -1;
-            }
-
-
-
-
-            /* TODO Retrieve the index of the item closest to the mouse pointer. -1 means over drag item.
-            int closestItem = _lv.InsertionMark.NearestIndex(targetPoint);
-            //Trace($"closestItem:{closestItem}");
-
-            if (closestItem > -1)
-            {
-                // Determine whether the mouse pointer is to the left or the right of the midpoint of
-                // the closest item and set the InsertionMark.AppearsAfterItem property accordingly.
-                Rectangle itemBounds = _lv.GetItemRect(closestItem);
-                _lv.InsertionMark.AppearsAfterItem = targetPoint.X > itemBounds.Left + (itemBounds.Width / 2);
-            }
-
-            // Set the location of the insertion mark. -1 makes the insertion mark disappear.
-            _lv.InsertionMark.Index = closestItem;
-            */
-
-
-
-            Invalidate();
         }
 
         /// <summary>
@@ -482,10 +498,9 @@ namespace Ephemera.IconicSelector
         {
             int index = GetItemIndex(sender);
 
-            Trace?.Invoke(this, $"Itemd_DragLeave() index:{index}");
+            TraceLine($"Itemd_DragLeave() index:{index}");
 
-            SetTarget(-1);
-            _insertIndex = -1;
+            SetInsert(-1, -1);
 
             Invalidate();
         }
@@ -501,12 +516,12 @@ namespace Ephemera.IconicSelector
             if (e.Data is null) throw new InvalidOperationException();
             int index = GetItemIndex(sender);
 
-            if (InsertAfter && index < _itemds.Count - 1)
-            {
-                index++;
-            }
+            //if (InsertAfter && index < _itemds.Count - 1)
+            //{
+            //    index++;
+            //}
 
-            Trace?.Invoke(this, $"Itemd_DragDrop() index:{index}");
+            TraceLine($"Itemd_DragDrop() index:{index}");
 
             // What do we have here?
             var dt = e.Data.GetFormats();
@@ -524,8 +539,6 @@ namespace Ephemera.IconicSelector
                 // Remove the original dragged item.
                 RemoveItem(draggedItem);
 
-                SetTarget(-1);
-
                 handled = true;
             }
 
@@ -534,7 +547,7 @@ namespace Ephemera.IconicSelector
                 var fdata = e.Data.GetData(DataFormats.FileDrop);
                 foreach (string target in (string[])fdata!)
                 {
-                    Trace?.Invoke(this, $"Dropped file -> [{target}]");
+                    TraceLine($"Dropped file -> [{target}]");
                     var icon = GraphicsUtils.ExtractIconFromExecutable(target, 0, true);
                     var fn = Path.GetFileName(target);
                     AddItem(fn, icon?.ToBitmap(), target);
@@ -556,7 +569,7 @@ namespace Ephemera.IconicSelector
                     int start = p.IndexOf("http");
                     int end = p.IndexOf("\">", start);
                     var fullurl = p[start..end];
-                    Trace?.Invoke(this, $"Dropped url -> [{fullurl}]");
+                    TraceLine($"Dropped url -> [{fullurl}]");
 
                     var uri = new Uri(fullurl);
 
@@ -574,7 +587,7 @@ namespace Ephemera.IconicSelector
                     }
                     catch (HttpRequestException ex)
                     {
-                        Trace?.Invoke(this, $"Request failed - use default [{ex.Message}]");
+                        TraceLine($"Request failed - use default [{ex.Message}]");
                         AddItem(uri.Host, _defaultImage, fullurl);
                     }
                     catch (Exception)
@@ -592,25 +605,25 @@ namespace Ephemera.IconicSelector
                 // ignore
             }
 
-            _insertIndex = -1;
+            SetInsert(-1, -1);
 
             Invalidate();
         }
         #endregion
 
         #region Internals
-        /// <summary>
-        /// Set the target property for specific item. Clears all others.
-        /// </summary>
-        /// <param name="index">If -1 clear all</param>
-        void SetTarget(int index)
-        {
-            Trace?.Invoke(this, $"SetTarget {index}");
-            for (int i = 0; i < _itemds.Count; i++)
-            {
-                _itemds[i].IsTarget = index == i;
-            }
-        }
+        ///// <summary>
+        ///// Set the target property for specific item. Clears all others.
+        ///// </summary>
+        ///// <param name="index">If -1 clear all</param>
+        //void SetTarget(int index)
+        //{
+        //    Trace?.Invoke(this, $"SetTarget {index}");
+        //    for (int i = 0; i < _itemds.Count; i++)
+        //    {
+        //        _itemds[i].IsTarget = index == i;
+        //    }
+        //}
 
         /// <summary>
         /// Get the item safely.
