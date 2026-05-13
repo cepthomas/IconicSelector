@@ -32,17 +32,11 @@ namespace Ephemera.IconicSelector
         /// <summary>Geometry.</summary>
         public DisplayRect TextRect { get; init; } = new();
 
-        // /// <summary>Cosmetics.</summary>
-        // public Color TargetColor { get; set; } = Color.Aqua;
-
         /// <summary>Cosmetics.</summary>
         public Color IndicatorColor { get; set; } = Color.Aqua;
 
         /// <summary></summary>
         public bool Selected = false;
-
-        // /// <summary></summary>
-        // public bool IsTarget = false;
         #endregion
 
         #region Events
@@ -149,15 +143,14 @@ namespace Ephemera.IconicSelector
         /// <param name="pe"></param>
         protected override void OnPaint(PaintEventArgs pe)
         {
-            // pe.Graphics.Clear(IsTarget ? TargetColor : BackColor);
-
             pe.Graphics.Clear(BackColor);
 
             if (Selected) // Draw box.
             {
+                int box = 4;
                 Rectangle rect = ClientRectangle;
-                rect.Inflate(-1, -1);
-                using Pen pen = new(IndicatorColor, 4);
+                rect.Inflate(-box, -box);
+                using Pen pen = new(IndicatorColor, box);
                 pe.Graphics.DrawRectangle(pen, rect);
             }
 
@@ -171,7 +164,6 @@ namespace Ephemera.IconicSelector
             {
                 using StringFormat sfmt = new() { LineAlignment = StringAlignment.Center, Alignment = StringAlignment.Center };
                 pe.Graphics.DrawString(Item.Caption, Font, Brushes.Black, TextRect.WinRect, sfmt);
-                //pe.Graphics.DrawRectangle(Pens.Green, TextRect.WinRect);
             }
 
             base.OnPaint(pe);

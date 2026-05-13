@@ -27,8 +27,16 @@ namespace Ephemera.IconicSelector
         Fit
     }
 
-    /// <summary></summary>
-    public enum MouseFunction { SingleSelect, MultiSelect, Click }
+    /// <summary>What the left mouse button does.</summary>
+    public enum MouseFunction
+    {
+        /// <summary>One only selected.</summary>
+        SingleSelect,
+        /// <summary>One or more selected.</summary>
+        MultiSelect,
+        /// <summary>Standard single click.</summary>
+        Click,
+    }
 
     /// <summary>Custom rectangle for this application. TODOI or just use builtin?</summary>
     public class DisplayRect

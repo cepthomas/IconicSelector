@@ -25,9 +25,6 @@ namespace Ephemera.IconicSelector
         /// <summary>What the mouse click does.</summary>
         public MouseFunction LeftMouseClick { get; set; } = MouseFunction.Click;
 
-        // /// <summary>Drag and drop location.</summary>
-        // public bool InsertAfter { get; set; } = false;
-
         /// <summary>Allow drag and drop (files) from other applications.</summary>
         public bool AllowExternalDrop { get; set; } = false;
 
@@ -190,7 +187,7 @@ namespace Ephemera.IconicSelector
                         gr.Clear(Color.Transparent);
                     }
 
-                    // Stupid/slow but infrequent and small images. TODO.
+                    // Stupid/slow but infrequent and small images. TODOI.
                     for (int x = 0; x < bmpout.Width; x++)
                     {
                         for (int y = 0; y < bmpout.Height; y++)
@@ -317,9 +314,8 @@ namespace Ephemera.IconicSelector
                 //var pt = PointToClient(new(0, 0));
                 using Pen pen = new(IndicatorColor, 4);
 
-                pe.Graphics.DrawLine(pen, loc.X - 3, loc.Y, loc.X - 3, loc.Y + itemd.Height);
-                //pe.Graphics.DrawLine(Item.Caption, Font, Brushes.Black, TextRect.WinRect, sfmt);
-
+                int offset = 3;
+                pe.Graphics.DrawLine(pen, loc.X - offset, loc.Y, loc.X - offset, loc.Y + itemd.Height);
             }
 
             base.OnPaint(pe);
@@ -375,50 +371,6 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-
-
-        void TraceLine(string line)
-        {
-            Trace?.Invoke(this, new() { Line = line });
-        }
-
-        void TraceState(string state)
-        {
-            Trace?.Invoke(this, new() { State = state });
-        }
-
-
-        void SetInsert(int index, int xpos)
-        {
-            if (index == -1)
-            {
-                _insertIndex = -1;
-                TraceState($"Near nada 1");
-            }
-            else if (xpos < (_itemdSize.Width / 4)) // Show indicator if it is near edges.
-            {
-                _insertIndex = index;
-                TraceState($"Near left");
-            }
-            else if (xpos > (_itemdSize.Width * 3 / 4))
-            {
-                _insertIndex = index + 1;
-                TraceState($"Near right");
-            }
-            else
-            {
-                _insertIndex = -1;
-                TraceState($"Near nada 2");
-            }
-
-            TraceState($"SetInsert index:{index} xpos:{xpos} _insertIndex:{_insertIndex} ");
-        }
-
-
-
-
-
-
         #region Drag and drop
         /// <summary>
         /// Starts the drag-and-drop operation when an item is dragged.
@@ -451,11 +403,6 @@ namespace Ephemera.IconicSelector
                 e.Effect = e.AllowedEffect;
             }
 
-            //for (int i = 0; i < _itemds.Count; i++)
-            //{
-            //    if (_itemds[i].IsTarget) Trace?.Invoke(this, $"IsTarget:{i}");
-            //}
-
             SetInsert(-1, -1);
 
             Invalidate();
@@ -473,20 +420,11 @@ namespace Ephemera.IconicSelector
             
             TraceState($"Itemd_DragOver index:{index} _insertIndex:{_insertIndex} X:{e.X} Y:{e.Y}");
 
-            //if (index != _insertIndex)
-            {
-                //var itemdPoint = itemd.PointToClient(new Point(e.X, e.Y));
+            var itemdPoint = itemd.PointToClient(new Point(e.X, e.Y));
 
-                var itemdPoint = itemd.PointToClient(new Point(e.X, e.Y));
+            SetInsert(index, itemdPoint.X);
 
-                //var rect2 = itemd.ClientRectangle;
-
-                //Trace?.Invoke(this, $">>> x:{targetPoint2.X} y:{targetPoint2.Y}");
-
-                SetInsert(index, itemdPoint.X);
-
-                Invalidate();
-            }
+            Invalidate();
         }
 
         /// <summary>
@@ -516,16 +454,11 @@ namespace Ephemera.IconicSelector
             if (e.Data is null) throw new InvalidOperationException();
             int index = GetItemIndex(sender);
 
-            //if (InsertAfter && index < _itemds.Count - 1)
-            //{
-            //    index++;
-            //}
-
             TraceLine($"Itemd_DragDrop() index:{index}");
 
             // What do we have here?
             var dt = e.Data.GetFormats();
-            bool handled = false;
+            bool handled = _insertIndex < 0;
 
             if (!handled && dt.Contains("System.Int32"))
             {
@@ -612,18 +545,31 @@ namespace Ephemera.IconicSelector
         #endregion
 
         #region Internals
-        ///// <summary>
-        ///// Set the target property for specific item. Clears all others.
-        ///// </summary>
-        ///// <param name="index">If -1 clear all</param>
-        //void SetTarget(int index)
-        //{
-        //    Trace?.Invoke(this, $"SetTarget {index}");
-        //    for (int i = 0; i < _itemds.Count; i++)
-        //    {
-        //        _itemds[i].IsTarget = index == i;
-        //    }
-        //}
+
+        void SetInsert(int index, int xpos)
+        {
+            if (index == -1)
+            {
+                _insertIndex = -1;
+                // TraceState($"Near nada 1");
+            }
+            else if (xpos < (_itemdSize.Width / 4)) // Show indicator if it is near edges.
+            {
+                _insertIndex = index;
+                // TraceState($"Near left");
+            }
+            else if (xpos > (_itemdSize.Width * 3 / 4))
+            {
+                _insertIndex = index + 1;
+                // TraceState($"Near right");
+            }
+            else
+            {
+                _insertIndex = -1;
+                // TraceState($"Near nada 2");
+            }
+            // TraceState($"SetInsert index:{index} xpos:{xpos} _insertIndex:{_insertIndex} ");
+        }
 
         /// <summary>
         /// Get the item safely.
@@ -666,6 +612,16 @@ namespace Ephemera.IconicSelector
 
             Controls.Remove(itemd);
             _itemds.Remove(itemd);
+        }
+
+        void TraceLine(string line)
+        {
+            Trace?.Invoke(this, new() { Line = line });
+        }
+
+        void TraceState(string state)
+        {
+            Trace?.Invoke(this, new() { State = state });
         }
         #endregion
     }
