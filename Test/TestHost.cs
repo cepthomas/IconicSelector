@@ -78,6 +78,19 @@ namespace Ephemera.IconicSelector.Test
             }
             var defbmp = pbmp.GetBitmap();
 
+
+            // // Make a default image - big X.
+            // _defaultImage = new(ImageSize.Width, ImageSize.Height);
+            // using Graphics gr = Graphics.FromImage(_defaultImage);
+            // Pen pen = new(IndicatorColor, 4);
+            // int pad = 2;
+            // int szx = ImageSize.Width - 2 * pad;
+            // int szy = ImageSize.Height - 2 * pad;
+            // gr.DrawLine(pen, pad, pad, szx, szy);
+            // gr.DrawLine(pen, pad, szy, szx, pad);
+
+
+
             // Add entries to selector. Null forces selector default - X.
             Bitmap?[] bmps = [bmp1, bmp2, bmp3, bmp4, defbmp, null];
             var rand = new Random();
@@ -117,8 +130,8 @@ namespace Ephemera.IconicSelector.Test
                         _states[parts[0]] = e.State;
                     }
 
-                    tvState.Clear();
-                    _states.Values.ForEach(st => tvState.Append(st));
+                    var s = string.Join(Environment.NewLine, _states.Values);
+                    tbState.Text = s;
                 }
             };
 
@@ -163,6 +176,10 @@ namespace Ephemera.IconicSelector.Test
         {
             try
             {
+                ColorDialog dlg = new ColorDialog();
+                dlg.ShowDialog();
+
+
                 //var formDnD = new Snip_DragNDrop.FormDnd();
                 //formDnD.ShowDialog();
             }

@@ -37,6 +37,9 @@ namespace Ephemera.IconicSelector
         /// <summary>Cosmetics.</summary>
         public Color IndicatorColor { get; set; } = Color.Purple;
 
+        /// <summary>If no valid image available.</summary>
+        public Bitmap DefaultImage  { set { _defaultImage = value; } }
+
         /// <summary>Visual space at edges.</summary>
         public int Pad { get; set; } = 4;
 
@@ -52,7 +55,7 @@ namespace Ephemera.IconicSelector
         readonly List<ItemDisplay> _itemds = [];
 
         /// <summary>If no valid image available.</summary>
-        Bitmap _defaultImage = new(16, 16);
+        Bitmap _defaultImage;
 
         /// <summary>ItemDisplay geometry.</summary>
         Rectangle _itemdImageRect = new();
@@ -66,6 +69,14 @@ namespace Ephemera.IconicSelector
         /// <summary>Where to move/insert item.</summary>
         int _insertIndex = -1;
         #endregion
+
+
+// meta indexes
+const int NOT_IN_TARGET = -1;
+const int IN_TARGET_CENTER = -2;
+
+
+
 
         #region Events
         /// <summary></summary>
@@ -90,6 +101,10 @@ namespace Ephemera.IconicSelector
             AutoScroll = true;
             // Default mode.
             Init(SelectorStyle.Icon);
+
+            _defaultImage = new(32, 32);
+            using Graphics gr = Graphics.FromImage(_defaultImage);
+            gr.Clear(Color.Cyan);
         }
 
         /// <summary>
@@ -128,16 +143,6 @@ namespace Ephemera.IconicSelector
                     }
                     break;
             }
-
-            // Make a default image - big X.
-            _defaultImage = new(ImageSize.Width, ImageSize.Height);
-            using Graphics gr = Graphics.FromImage(_defaultImage);
-            Pen pen = new(IndicatorColor, 4);
-            int pad = 2;
-            int szx = ImageSize.Width - 2 * pad;
-            int szy = ImageSize.Height - 2 * pad;
-            gr.DrawLine(pen, pad, pad, szx, szy);
-            gr.DrawLine(pen, pad, szy, szx, pad);
         }
 
         /// <summary>
@@ -150,7 +155,7 @@ namespace Ephemera.IconicSelector
             {
                 _itemds.ForEach(itemd => { itemd.Dispose(); });
                 _itemds.Clear();
-                _defaultImage?.Dispose();
+                _defaultImage.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -180,14 +185,14 @@ namespace Ephemera.IconicSelector
                     break;
 
                 case SelectorStyle.Image:
-                    // Copy pixels staring from 0,0.
+                    // Copy pixels starting from 0, 0 to fill the visible area.
                     Bitmap bmpout = new(ImageSize.Width, ImageSize.Height);
                     using (Graphics gr = Graphics.FromImage(bmpout))
                     {
                         gr.Clear(Color.Transparent);
                     }
 
-                    // Stupid/slow but infrequent and small images. TODOI.
+                    // Stupid/slow but infrequent small images. TODOI.
                     for (int x = 0; x < bmpout.Width; x++)
                     {
                         for (int y = 0; y < bmpout.Height; y++)
@@ -403,7 +408,7 @@ namespace Ephemera.IconicSelector
                 e.Effect = e.AllowedEffect;
             }
 
-            SetInsert(-1, -1);
+            SetInsert(IN_TARGET_CENTER);
 
             Invalidate();
         }
@@ -438,7 +443,7 @@ namespace Ephemera.IconicSelector
 
             TraceLine($"Itemd_DragLeave() index:{index}");
 
-            SetInsert(-1, -1);
+            SetInsert(NOT_IN_TARGET);
 
             Invalidate();
         }
@@ -538,7 +543,7 @@ namespace Ephemera.IconicSelector
                 // ignore
             }
 
-            SetInsert(-1, -1);
+            SetInsert(NOT_IN_TARGET);
 
             Invalidate();
         }
@@ -546,29 +551,36 @@ namespace Ephemera.IconicSelector
 
         #region Internals
 
-        void SetInsert(int index, int xpos)
+        // index - which display
+        // xpos - where in display
+        void SetInsert(int index, int xpos = -1)
         {
-            if (index == -1)
+            if (index == -1) // not in a target
             {
-                _insertIndex = -1;
-                // TraceState($"Near nada 1");
+                _insertIndex = NOT_IN_TARGET;
             }
-            else if (xpos < (_itemdSize.Width / 4)) // Show indicator if it is near edges.
+            else // in a target
             {
-                _insertIndex = index;
-                // TraceState($"Near left");
+                // where?
+                if (xpos < 0) // shouldn't happen
+                {
+                    _insertIndex = NOT_IN_TARGET;
+                }
+                else if (xpos < (_itemdSize.Width / 4)) // at left edge
+                {
+                    _insertIndex = index;
+                }
+                else if (xpos > (_itemdSize.Width * 3 / 4)) // at right edge
+                {
+                    _insertIndex = index + 1;
+                }
+                else
+                {
+                    _insertIndex = IN_TARGET_CENTER;
+                }
             }
-            else if (xpos > (_itemdSize.Width * 3 / 4))
-            {
-                _insertIndex = index + 1;
-                // TraceState($"Near right");
-            }
-            else
-            {
-                _insertIndex = -1;
-                // TraceState($"Near nada 2");
-            }
-            // TraceState($"SetInsert index:{index} xpos:{xpos} _insertIndex:{_insertIndex} ");
+
+            TraceState($"SetInsert index:{index} xpos:{xpos} _insertIndex:{_insertIndex} ");
         }
 
         /// <summary>

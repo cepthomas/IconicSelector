@@ -37,7 +37,7 @@ namespace Ephemera.IconicSelector.Test
             btnGo2 = new Button();
             icsel = new Selector();
             tvInfo = new Ephemera.NBagOfUis.TextViewer();
-            tvState = new Ephemera.NBagOfUis.TextViewer();
+            tbState = new TextBox();
             SuspendLayout();
             // 
             // btnGo1
@@ -90,25 +90,22 @@ namespace Ephemera.IconicSelector.Test
             tvInfo.TabIndex = 8;
             tvInfo.WordWrap = true;
             // 
-            // tvState
+            // tbState
             // 
-            tvState.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            tvState.BorderStyle = BorderStyle.FixedSingle;
-            tvState.Location = new Point(75, 12);
-            tvState.MatchUseBackground = true;
-            tvState.MaxText = 50000;
-            tvState.Name = "tvState";
-            tvState.Prompt = "";
-            tvState.Size = new Size(301, 90);
-            tvState.TabIndex = 9;
-            tvState.WordWrap = true;
+            tbState.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            tbState.Multiline = true;
+            tbState.BorderStyle = BorderStyle.FixedSingle;
+            tbState.Location = new Point(75, 12);
+            tbState.Name = "tbState";
+            tbState.Size = new Size(301, 90);
+            tbState.TabIndex = 9;
             // 
             // TestHost
             // 
             AutoScaleDimensions = new SizeF(8F, 19F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1088, 584);
-            Controls.Add(tvState);
+            Controls.Add(tbState);
             Controls.Add(tvInfo);
             Controls.Add(icsel);
             Controls.Add(btnGo2);
@@ -123,7 +120,7 @@ namespace Ephemera.IconicSelector.Test
         private Button btnGo1;
         private Button btnGo2;
         private Selector icsel;
+        private TextBox tbState;
         private Ephemera.NBagOfUis.TextViewer tvInfo;
-        private NBagOfUis.TextViewer tvState;
     }
 }
