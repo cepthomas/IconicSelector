@@ -40,9 +40,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="Ephemera.NBagOfTricks">
+      <ProjectReference Include="..\NBagOfTricks\NBagOfTricks.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- <Reference Include="Ephemera.NBagOfTricks">
             <HintPath>lib\Ephemera.NBagOfTricks.dll</HintPath>
-        </Reference>
+        </Reference> -->
         <Reference Include="Ephemera.NBagOfUis">
           <HintPath>lib\Ephemera.NBagOfUis.dll</HintPath>
         </Reference>

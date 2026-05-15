@@ -8,6 +8,7 @@ using Ephemera.IconicSelector;
 using System.Net.Http;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
+using System.Media;
 
 
 #pragma warning disable CS0168 // Variable is declared but never used
@@ -41,8 +42,8 @@ namespace Ephemera.IconicSelector.Test
             const int DEF_IMAGE_SIZE = 32;
 
             // Style = icon
-            icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-            icsel.Init(SelectorStyle.Icon);
+            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            //icsel.Init(SelectorStyle.Icon);
 
             // Style = tile
             //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
@@ -53,9 +54,8 @@ namespace Ephemera.IconicSelector.Test
             //icsel.Init(SelectorStyle.Fit);
 
             // Style = image
-            //icsel.ImageSize = new(128, 64);
-            //icsel.Init(SelectorStyle.Image);
-
+            icsel.ImageSize = new(100, 50);
+            icsel.Init(SelectorStyle.Image);
 
             // Init the image list.
             var sdir = MiscUtils.GetSourcePath();
@@ -78,24 +78,12 @@ namespace Ephemera.IconicSelector.Test
             }
             var defbmp = pbmp.GetBitmap();
 
-
-            // // Make a default image - big X.
-            // _defaultImage = new(ImageSize.Width, ImageSize.Height);
-            // using Graphics gr = Graphics.FromImage(_defaultImage);
-            // Pen pen = new(IndicatorColor, 4);
-            // int pad = 2;
-            // int szx = ImageSize.Width - 2 * pad;
-            // int szy = ImageSize.Height - 2 * pad;
-            // gr.DrawLine(pen, pad, pad, szx, szy);
-            // gr.DrawLine(pen, pad, szy, szx, pad);
-
-
-
             // Add entries to selector. Null forces selector default - X.
             Bitmap?[] bmps = [bmp1, bmp2, bmp3, bmp4, defbmp, null];
             var rand = new Random();
             for (int i = 0; i < 15; i++)
             {
+                //icsel.AddItem("333", bmp1, "fullname111");
                 var text = $"Item {i} etc etc etc etc";
                 icsel.AddItem(text, bmps[rand.Next(0, bmps.Length)], $"fullname{i}");
             }
@@ -201,84 +189,15 @@ namespace Ephemera.IconicSelector.Test
             Fill,
         }
 
-        public static Bitmap FitOne(this Bitmap bmp, Size sz, ImageFit fit)
+        public Bitmap FitOne(Bitmap bmp, Size sz, ImageFit fit)
         {
             // Make a thumbnail scaled to available real estate.
             float ratio = (float)sz.Height / bmp.Height;
             int tnWidth = (int)(bmp.Width * ratio);
             int tnHeight = sz.Height;
-            var res = bmp.Resize(tnWidth, tnHeight);
-            return res;
+            //var res = bmp.Resize(tnWidth, tnHeight);
+            //return res;
+            return bmp;
         }
-
-        public static Bitmap Subrect(this Bitmap bmp, Rectangle region)
-        {
-            const int imgSize = 32;
-
-            using PixelBitmap pbmp = new(region.Width, region.Height);
-            int incr = 256 / imgSize;
-            for (int y = 0; y < imgSize; y++)
-            {
-                for (int x = 0; x < imgSize; x++)
-                {
-                    pbmp.SetPixel(x, y, Color.FromArgb(255, x * incr % 256, y * incr % 256, 150));
-                }
-            }
-            var defbmp = pbmp.GetBitmap();
-
-            Bitmap res = new Bitmap(region.Width, region.Height);
-
-            using (Graphics graphics = Graphics.FromImage(res))
-            {
-                // Set high quality.
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
-                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
-                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
-
-                // Draw the image.
-                graphics.DrawImage(bmp, 0, 0, res.Width, res.Height);
-            }
-
-            return res;
-        }
-
-
-        /// <summary>Custom rectangle for this application. TODO! or just use builtin?</summary>
-        public class DisplayRect
-        {
-            public int Left { get; init; } = -1;
-            public int Top { get; init; } = -1;
-            public int Right { get; init; } = -1;
-            public int Bottom { get; init; } = -1;
-            public Rectangle WinRect { get { return new Rectangle(Left, Top, Right - Left, Bottom - Top); } }
-            public bool IsValid { get; init; } = false;
-
-            /// <summary>Default constructor - invalid.</summary>
-            public DisplayRect()
-            {
-                IsValid = false;
-            }
-
-            /// <summary>Normal constructor.</summary>
-            public DisplayRect(int left, int top, int width, int height)
-            {
-                IsValid = top >= 0 && left >= 0 && width >= 0 && height >= 0;
-                if (!IsValid) throw new ArgumentException("Invalid args");
-                Left = left;
-                Top = top;
-                Right = left + width;
-                Bottom = top + height;
-            }
-
-            /// <summary>Read me.</summary>
-            public override string ToString()
-            {
-                return IsValid ? $"L:{Left} T:{Top} R:{Right} B:{Bottom}" : "Invalid";
-            }
-        }
-
     }
 }

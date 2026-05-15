@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30717.126
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37111.16 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4FAAAA}") = "IconicSelector", "IconicSelector.csproj", "{B20EA1B9-E8EC-40C1-A1B7-1F48C812BBBB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IconicSelector", "IconicSelector.csproj", "{B20EA1B9-E8EC-40C1-A1B7-1F48C812BBBB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4FAAAA}") = "Test", "Test\Test.csproj", "{2D9D04C2-1637-4D29-AF9D-63103912CCCC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{2D9D04C2-1637-4D29-AF9D-63103912CCCC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NBagOfTricks", "..\NBagOfTricks\NBagOfTricks.csproj", "{AA9F680A-17EE-810E-9E25-A3CFFE3E0732}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{2D9D04C2-1637-4D29-AF9D-63103912CCCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D9D04C2-1637-4D29-AF9D-63103912CCCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2D9D04C2-1637-4D29-AF9D-63103912CCCC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA9F680A-17EE-810E-9E25-A3CFFE3E0732}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA9F680A-17EE-810E-9E25-A3CFFE3E0732}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA9F680A-17EE-810E-9E25-A3CFFE3E0732}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA9F680A-17EE-810E-9E25-A3CFFE3E0732}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -183,25 +183,23 @@ namespace Ephemera.IconicSelector
 
                 case SelectorStyle.Image:
                     // Copy pixels starting from 0, 0 to fill the visible area.
-                    //Bitmap bmpout = new(ImageSize.Width, ImageSize.Height);
-                    //using (Graphics gr = Graphics.FromImage(bmpout))
-                    //{
-                    //    gr.Clear(Color.Transparent);
-                    //}
+                    PixelBitmap pbmpin = new(bmp);
+                    PixelBitmap pbmpout = new(ImageSize.Width, ImageSize.Height);
 
-                    //// Stupid/slow but infrequent small images. TODO!.
-                    //for (int x = 0; x < bmpout.Width; x++)
-                    //{
-                    //    for (int y = 0; y < bmpout.Height; y++)
-                    //    {
-                    //        if (x < bmp.Width && y < bmp.Height)
-                    //        {
-                    //            bmpout.SetPixel(x, y, bmp.GetPixel(x, y));
-                    //        }
-                    //    }
-                    //}
+                    for (int x = 0; x < ImageSize.Width; x++)
+                    {
+                        for (int y = 0; y < ImageSize.Height; y++)
+                        {
+                            if (x < bmp.Width && y < bmp.Height)
+                            {
+                                pbmpout.SetPixel(x, y, pbmpin.GetPixel(x, y));
+                            }
+                        }
+                    }
 
-                    bmp = bmpout;
+                    bmp = pbmpout.GetBitmap();
+                    pbmpin.Dispose();
+                    pbmpout.Dispose();
                     break;
 
                 case SelectorStyle.Fit:

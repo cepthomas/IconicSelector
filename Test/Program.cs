@@ -21,7 +21,6 @@ namespace Ephemera.IconicSelector.Test
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-
             try
             {
                 var host = new TestHost();
@@ -33,7 +32,6 @@ namespace Ephemera.IconicSelector.Test
                 Environment.Exit(1);
             }
         }
-
 
         static void HandleException(Exception ex, string type)
         {
