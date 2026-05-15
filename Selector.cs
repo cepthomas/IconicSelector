@@ -12,6 +12,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 using System.Net.Http;
+using System.Drawing.Drawing2D;
 using Ephemera.NBagOfTricks;
 using Ephemera.NBagOfUis;
 
@@ -19,7 +20,7 @@ using Ephemera.NBagOfUis;
 namespace Ephemera.IconicSelector
 {
     /// <summary>Master control.</summary>
-    public class Selector : ScrollableControl //UserControl  TODOI scroll   https://www.cyotek.com/blog/creating-a-custom-single-axis-scrolling-control-in-winforms
+    public class Selector : ScrollableControl //UserControl  TODO! scroll   https://www.cyotek.com/blog/creating-a-custom-single-axis-scrolling-control-in-winforms
     {
         #region Properties
         /// <summary>What the mouse click does.</summary>
@@ -57,7 +58,7 @@ namespace Ephemera.IconicSelector
         /// <summary>If no valid image available.</summary>
         Bitmap _defaultImage;
 
-        /// <summary>ItemDisplay geometry.</summary>
+        /// <summary>ItemDisplay geometry. TODO! do as needed not cached?</summary>
         Rectangle _itemdImageRect = new();
 
         /// <summary>ItemDisplay geometry.</summary>
@@ -68,15 +69,11 @@ namespace Ephemera.IconicSelector
 
         /// <summary>Where to move/insert item.</summary>
         int _insertIndex = -1;
+
+        /// <summary>meta indexes</summary>
+        const int NOT_IN_TARGET = -1;
+        const int IN_TARGET_CENTER = -2;
         #endregion
-
-
-// meta indexes
-const int NOT_IN_TARGET = -1;
-const int IN_TARGET_CENTER = -2;
-
-
-
 
         #region Events
         /// <summary></summary>
@@ -186,29 +183,29 @@ const int IN_TARGET_CENTER = -2;
 
                 case SelectorStyle.Image:
                     // Copy pixels starting from 0, 0 to fill the visible area.
-                    Bitmap bmpout = new(ImageSize.Width, ImageSize.Height);
-                    using (Graphics gr = Graphics.FromImage(bmpout))
-                    {
-                        gr.Clear(Color.Transparent);
-                    }
+                    //Bitmap bmpout = new(ImageSize.Width, ImageSize.Height);
+                    //using (Graphics gr = Graphics.FromImage(bmpout))
+                    //{
+                    //    gr.Clear(Color.Transparent);
+                    //}
 
-                    // Stupid/slow but infrequent small images. TODOI.
-                    for (int x = 0; x < bmpout.Width; x++)
-                    {
-                        for (int y = 0; y < bmpout.Height; y++)
-                        {
-                            if (x < bmp.Width && y < bmp.Height)
-                            {
-                                bmpout.SetPixel(x, y, bmp.GetPixel(x, y));
-                            }
-                        }
-                    }
+                    //// Stupid/slow but infrequent small images. TODO!.
+                    //for (int x = 0; x < bmpout.Width; x++)
+                    //{
+                    //    for (int y = 0; y < bmpout.Height; y++)
+                    //    {
+                    //        if (x < bmp.Width && y < bmp.Height)
+                    //        {
+                    //            bmpout.SetPixel(x, y, bmp.GetPixel(x, y));
+                    //        }
+                    //    }
+                    //}
 
                     bmp = bmpout;
                     break;
 
                 case SelectorStyle.Fit:
-                    bmp = bmp.Resize(ImageSize.Width, ImageSize.Height);
+                    bmp = ResizeBitmap(bmp, ImageSize.Width, ImageSize.Height);
                     break;
             }
 
@@ -550,9 +547,38 @@ const int IN_TARGET_CENTER = -2;
         #endregion
 
         #region Internals
+        /// <summary>Resize the image to the specified width and height.</summary>
+        /// <param name="bmp">The image to resize.</param>
+        /// <param name="width">The width to resize to.</param>
+        /// <param name="height">The height to resize to.</param>
+        /// <returns>The resized image.</returns>
+        public Bitmap ResizeBitmap(Bitmap bmp, int width, int height)
+        {
+            Bitmap result = new(width, height);
+            result.SetResolution(bmp.HorizontalResolution, bmp.VerticalResolution);
 
-        // index - which display
-        // xpos - where in display
+            using (Graphics graphics = Graphics.FromImage(result))
+            {
+                // Set high quality.
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+
+                // Draw the image.
+                graphics.DrawImage(bmp, 0, 0, result.Width, result.Height);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="index">which display</param>
+        /// <param name="xpos">where in display</param>
         void SetInsert(int index, int xpos = -1)
         {
             if (index == -1) // not in a target
@@ -626,11 +652,19 @@ const int IN_TARGET_CENTER = -2;
             _itemds.Remove(itemd);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="line"></param>
         void TraceLine(string line)
         {
             Trace?.Invoke(this, new() { Line = line });
         }
 
+        /// <summary>
+        /// Diagnostic.
+        /// </summary>
+        /// <param name="state"></param>
         void TraceState(string state)
         {
             Trace?.Invoke(this, new() { State = state });

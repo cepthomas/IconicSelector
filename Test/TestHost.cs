@@ -138,8 +138,6 @@ namespace Ephemera.IconicSelector.Test
             base.OnLoad(e);
         }
 
-
-
         async void BtnGo1_Click(object sender, EventArgs e)
         {
             // Play with uri and favicons.
@@ -164,11 +162,9 @@ namespace Ephemera.IconicSelector.Test
             }
             catch (HttpRequestException ex)
             {
-
             }
             catch (Exception ex)
             {
-
             }
         }
 
@@ -176,9 +172,8 @@ namespace Ephemera.IconicSelector.Test
         {
             try
             {
-                ColorDialog dlg = new ColorDialog();
+                ColorDialog dlg = new();
                 dlg.ShowDialog();
-
 
                 //var formDnD = new Snip_DragNDrop.FormDnd();
                 //formDnD.ShowDialog();
@@ -186,6 +181,102 @@ namespace Ephemera.IconicSelector.Test
             catch (Exception ex)
             {
                 tvInfo.Append($"ERR -> [{ex}]");
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        ////////////////////// leftovers TODO! //////////////////////////////
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>Image fitting to ImageSize.</summary>
+        public enum ImageFit
+        {
+            /// <summary>Client is in charge of images</summary>
+            None,
+            /// <summary>Rendered image height from client, width scaled</summary>
+            FitHeight,
+            /// <summary>Rendered image width from client, height scaled</summary>
+            FitWidth,
+            /// <summary>Use all available space</summary>
+            Fill,
+        }
+
+        public static Bitmap FitOne(this Bitmap bmp, Size sz, ImageFit fit)
+        {
+            // Make a thumbnail scaled to available real estate.
+            float ratio = (float)sz.Height / bmp.Height;
+            int tnWidth = (int)(bmp.Width * ratio);
+            int tnHeight = sz.Height;
+            var res = bmp.Resize(tnWidth, tnHeight);
+            return res;
+        }
+
+        public static Bitmap Subrect(this Bitmap bmp, Rectangle region)
+        {
+            const int imgSize = 32;
+
+            using PixelBitmap pbmp = new(region.Width, region.Height);
+            int incr = 256 / imgSize;
+            for (int y = 0; y < imgSize; y++)
+            {
+                for (int x = 0; x < imgSize; x++)
+                {
+                    pbmp.SetPixel(x, y, Color.FromArgb(255, x * incr % 256, y * incr % 256, 150));
+                }
+            }
+            var defbmp = pbmp.GetBitmap();
+
+            Bitmap res = new Bitmap(region.Width, region.Height);
+
+            using (Graphics graphics = Graphics.FromImage(res))
+            {
+                // Set high quality.
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+
+                // Draw the image.
+                graphics.DrawImage(bmp, 0, 0, res.Width, res.Height);
+            }
+
+            return res;
+        }
+
+
+        /// <summary>Custom rectangle for this application. TODO! or just use builtin?</summary>
+        public class DisplayRect
+        {
+            public int Left { get; init; } = -1;
+            public int Top { get; init; } = -1;
+            public int Right { get; init; } = -1;
+            public int Bottom { get; init; } = -1;
+            public Rectangle WinRect { get { return new Rectangle(Left, Top, Right - Left, Bottom - Top); } }
+            public bool IsValid { get; init; } = false;
+
+            /// <summary>Default constructor - invalid.</summary>
+            public DisplayRect()
+            {
+                IsValid = false;
+            }
+
+            /// <summary>Normal constructor.</summary>
+            public DisplayRect(int left, int top, int width, int height)
+            {
+                IsValid = top >= 0 && left >= 0 && width >= 0 && height >= 0;
+                if (!IsValid) throw new ArgumentException("Invalid args");
+                Left = left;
+                Top = top;
+                Right = left + width;
+                Bottom = top + height;
+            }
+
+            /// <summary>Read me.</summary>
+            public override string ToString()
+            {
+                return IsValid ? $"L:{Left} T:{Top} R:{Right} B:{Bottom}" : "Invalid";
             }
         }
 
