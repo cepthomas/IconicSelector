@@ -145,25 +145,25 @@ namespace Ephemera.IconicSelector
         {
             pe.Graphics.Clear(BackColor);
 
-            if (Selected) // Draw box.
-            {
-                int box = 4;
-                Rectangle rect = ClientRectangle;
-                rect.Inflate(-box, -box);
-                using Pen pen = new(IndicatorColor, box);
-                pe.Graphics.DrawRectangle(pen, rect);
-            }
-
             // Main content.
             if (!ImageRect.IsEmpty)
             {
                 pe.Graphics.DrawImage(Item.Bitmap, ImageRect);
             }
 
-            if (!ImageRect.IsEmpty)
+            if (!TextRect.IsEmpty)
             {
                 using StringFormat sfmt = new() { LineAlignment = StringAlignment.Center, Alignment = StringAlignment.Center };
                 pe.Graphics.DrawString(Item.Caption, Font, Brushes.Black, TextRect, sfmt);
+            }
+
+            if (Selected) // Draw selection box.
+            {
+                int box = 3;
+                Rectangle rect = ClientRectangle;
+                //rect.Inflate(-box, -box);
+                using Pen pen = new(IndicatorColor, box);
+                pe.Graphics.DrawRectangle(pen, rect);
             }
 
             base.OnPaint(pe);

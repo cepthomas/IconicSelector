@@ -17,13 +17,13 @@ namespace Ephemera.IconicSelector
     /// <summary>Supported styles.</summary>
     public enum SelectorStyle
     {
-        /// <summary>Icon of ImageSize Bitmap above, text block below</summary>
+        /// <summary>Icon of ImageSize above, text block below</summary>
         Icon,
-        /// <summary>Icon of ImageSize Bitmap left, text block right</summary>
+        /// <summary>Icon of ImageSize left, text block right</summary>
         Tile,
-        /// <summary>Verbatim</summary>
+        /// <summary>Verbatim as provided by client, will truncate</summary>
         Image,
-        /// <summary>Fill with Bitmap</summary>
+        /// <summary>Fill/stretch with image</summary>
         Fit
     }
 

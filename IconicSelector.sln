@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IconicSelector", "IconicSel
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{2D9D04C2-1637-4D29-AF9D-63103912CCCC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NBagOfTricks", "..\NBagOfTricks\NBagOfTricks.csproj", "{AA9F680A-17EE-810E-9E25-A3CFFE3E0732}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{2D9D04C2-1637-4D29-AF9D-63103912CCCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D9D04C2-1637-4D29-AF9D-63103912CCCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2D9D04C2-1637-4D29-AF9D-63103912CCCC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AA9F680A-17EE-810E-9E25-A3CFFE3E0732}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AA9F680A-17EE-810E-9E25-A3CFFE3E0732}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AA9F680A-17EE-810E-9E25-A3CFFE3E0732}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AA9F680A-17EE-810E-9E25-A3CFFE3E0732}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

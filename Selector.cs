@@ -162,11 +162,11 @@ namespace Ephemera.IconicSelector
         /// <summary>
         /// Add a new item.
         /// </summary>
-        /// <param name="text">For display below/next to image</param>
+        /// <param name="caption">For display below/next to image</param>
         /// <param name="bmp">Bitmap</param>
         /// <param name="value">Meaningful for client use</param>
         /// <param name="index">Where to insert, -1 is append</param>
-        public void AddItem(string text, Bitmap? bmp, object value, int index = -1)
+        public void AddItem(string caption, Bitmap? bmp, object value, int index = -1)
         {
             // Make a new item. Maybe adjust the image.
             bmp ??= _defaultImage;
@@ -207,7 +207,7 @@ namespace Ephemera.IconicSelector
                     break;
             }
 
-            Item item = new(text, bmp, value);
+            Item item = new(caption, bmp, value);
 
             ItemDisplay itemd = new(item)
             {

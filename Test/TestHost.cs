@@ -46,16 +46,16 @@ namespace Ephemera.IconicSelector.Test
             //icsel.Init(SelectorStyle.Icon);
 
             // Style = tile
-            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-            //icsel.Init(SelectorStyle.Tile);
+            icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            icsel.Init(SelectorStyle.Tile);
 
             // Style = fit
             //icsel.ImageSize = new(200, 64);
             //icsel.Init(SelectorStyle.Fit);
 
             // Style = image
-            icsel.ImageSize = new(100, 50);
-            icsel.Init(SelectorStyle.Image);
+            //icsel.ImageSize = new(100, 50);
+            //icsel.Init(SelectorStyle.Image);
 
             // Init the image list.
             var sdir = MiscUtils.GetSourcePath();
@@ -65,20 +65,23 @@ namespace Ephemera.IconicSelector.Test
             using var icon = new Icon(Path.Combine(sdir, "Files", "crabe.ico"));
             var bmp3 = icon.ToBitmap();
             var bmp4 = new Bitmap(Path.Combine(sdir, "Files", "color-picker.png"));
+            var defbmp = new Bitmap(Path.Combine(sdir, "Files", "default.png"));
 
-            // Default image - rainbow.
-            using PixelBitmap pbmp = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-            int incr = 256 / DEF_IMAGE_SIZE;
-            for (int y = 0; y < DEF_IMAGE_SIZE; y++)
-            {
-                for (int x = 0; x < DEF_IMAGE_SIZE; x++)
-                {
-                    pbmp.SetPixel(x, y, Color.FromArgb(255, x * incr % 256, y * incr % 256, 150));
-                }
-            }
-            var defbmp = pbmp.GetBitmap();
+            //// Default image - rainbow.
+            //using PixelBitmap pbmp = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            //int incr = 256 / DEF_IMAGE_SIZE;
+            //for (int y = 0; y < DEF_IMAGE_SIZE; y++)
+            //{
+            //    for (int x = 0; x < DEF_IMAGE_SIZE; x++)
+            //    {
+            //        pbmp.SetPixel(x, y, Color.FromArgb(255, x * incr % 256, y * incr % 256, 150));
+            //    }
+            //}
+            //var defbmp = pbmp.GetBitmap();
 
-            // Add entries to selector. Null forces selector default - X.
+            //icsel.AddItem("BOOM", bmp4, $"fullnameXXX");
+
+            // Add entries to selector. Null forces selector default.
             Bitmap?[] bmps = [bmp1, bmp2, bmp3, bmp4, defbmp, null];
             var rand = new Random();
             for (int i = 0; i < 15; i++)

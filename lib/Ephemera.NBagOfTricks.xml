@@ -704,7 +704,7 @@
             <summary>Fast pixel read/write. Some borrowed from https://stackoverflow.com/a/34801225.</summary>
         </member>
         <member name="F:Ephemera.NBagOfTricks.PixelBitmap._buff">
-            <summary>Unmanaged buffer.</summary>
+            <summary>Unmanaged buffer. Full int used.</summary>
         </member>
         <member name="F:Ephemera.NBagOfTricks.PixelBitmap._width">
             <summary>Geometry.</summary>
@@ -747,7 +747,7 @@
             <returns></returns>
         </member>
         <member name="M:Ephemera.NBagOfTricks.PixelBitmap.GetBitmap">
-            <summary>Get GDI Bitmap of the buffer. Client must manage lifetime.</summary>
+            <summary>Get GDI Bitmap of the buffer. Always 32 bit. Client must manage lifetime.</summary>
             <returns></returns>
         </member>
         <member name="M:Ephemera.NBagOfTricks.PixelBitmap.Colorize(System.Drawing.Color,System.Drawing.Color)">
