@@ -17,7 +17,7 @@ namespace Ephemera.IconicSelector
 {
     /// <summary>
     /// One selectable item.
-    /// Differentiates DragAndDrop from simple click.
+    /// Differentiates start DragAndDrop from simple click.
     /// </summary>
     [ToolboxItem(false), Browsable(false)] // not useable in designer
     public class ItemDisplay : UserControl

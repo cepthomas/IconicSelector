@@ -18,9 +18,11 @@ namespace Ephemera.IconicSelector.Test
     public partial class TestHost : Form
     {
         readonly Dictionary<string, string> _states = [];
+        const int DEF_IMAGE_SIZE = 32;
 
         public TestHost()
         {
+            SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
             InitializeComponent();
         }
 
@@ -33,29 +35,23 @@ namespace Ephemera.IconicSelector.Test
                 new("WRN ", Color.Green),
             ];
 
+            icsel.Style = SelectorStyle.Icon;
+            icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            //icsel.Style = SelectorStyle.Tile;
+            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            //icsel.Style = SelectorStyle.Fit;
+            //icsel.ImageSize = new(200, 64);
+            //icsel.Style = SelectorStyle.Image;
+            //icsel.ImageSize = new(100, 50);
             icsel.AllowExternalDrop = true;
-            icsel.LeftMouseClick = MouseFunction.Click;
+            icsel.NumColumns = 2;
+            icsel.LeftMouseClick = MouseFunction.SingleSelect;
+            //icsel.LeftMouseClick = MouseFunction.Click;
             icsel.IndicatorColor = Color.Red;
             icsel.Pad = 8;
-            icsel.LeftMouseClick = MouseFunction.SingleSelect;
 
-            const int DEF_IMAGE_SIZE = 32;
+            icsel.Init();
 
-            // Style = icon
-            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-            //icsel.Init(SelectorStyle.Icon);
-
-            // Style = tile
-            icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-            icsel.Init(SelectorStyle.Tile);
-
-            // Style = fit
-            //icsel.ImageSize = new(200, 64);
-            //icsel.Init(SelectorStyle.Fit);
-
-            // Style = image
-            //icsel.ImageSize = new(100, 50);
-            //icsel.Init(SelectorStyle.Image);
 
             // Init the image list.
             var sdir = MiscUtils.GetSourcePath();
@@ -84,7 +80,7 @@ namespace Ephemera.IconicSelector.Test
             // Add entries to selector. Null forces selector default.
             Bitmap?[] bmps = [bmp1, bmp2, bmp3, bmp4, defbmp, null];
             var rand = new Random();
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < 30; i++)
             {
                 //icsel.AddItem("333", bmp1, "fullname111");
                 var text = $"Item {i} etc etc etc etc";
