@@ -58,7 +58,7 @@ namespace Ephemera.IconicSelector
         /// <summary>If no valid image available.</summary>
         Bitmap _defaultImage;
 
-        /// <summary>ItemDisplay geometry. TODO! do as needed not cached?</summary>
+        /// <summary>ItemDisplay geometry.
         Rectangle _itemdImageRect = new();
 
         /// <summary>ItemDisplay geometry.</summary>
@@ -102,6 +102,7 @@ namespace Ephemera.IconicSelector
             _defaultImage = new(32, 32);
             using Graphics gr = Graphics.FromImage(_defaultImage);
             gr.Clear(Color.Cyan);
+            gr.DrawString("?", Font, Brushes.Black, 2, 2);
         }
 
         /// <summary>
