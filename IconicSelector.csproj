@@ -21,18 +21,11 @@
 
     <ItemGroup>
         <Compile Remove="lib\**" />
-        <Compile Remove="old\**" />
         <Compile Remove="Test\**" />
         <EmbeddedResource Remove="lib\**" />
-        <EmbeddedResource Remove="old\**" />
         <EmbeddedResource Remove="Test\**" />
         <None Remove="lib\**" />
-        <None Remove="old\**" />
         <None Remove="Test\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Remove="scroll.cs" />
     </ItemGroup>
 
     <ItemGroup>

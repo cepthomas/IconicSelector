@@ -80,6 +80,44 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
+
+        protected override void OnDragEnter(DragEventArgs e)
+        {
+            // Check if the data being dragged contains file paths
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effect = DragDropEffects.Copy; // Show the 'copy' cursor
+                e.Effect = DragDropEffects.Move;
+            }
+            else
+            {
+                e.Effect = DragDropEffects.None; // Reject the drop
+            }
+
+            base.OnDragEnter(e);
+        }
+
+        protected override void OnDragLeave(EventArgs e)
+        {
+            base.OnDragLeave(e);
+        }
+
+        protected override void OnDragDrop(DragEventArgs e)
+        {
+            // Extract file paths from the external source (e.g., Windows Explorer)
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+
+            foreach (string filePath in files)
+            {
+                // Add logic to update your control or collection based on the file
+                Console.WriteLine($"Dropped file: {filePath}");
+            }
+
+            base.OnDragDrop(e);
+        }
+
+
+
         #region Mouse events
         /// <summary>
         /// 
@@ -111,7 +149,12 @@ namespace Ephemera.IconicSelector
                 if (!_dragging && (deltaX > SystemInformation.DragSize.Width || deltaY > SystemInformation.DragSize.Height))
                 {
                     _dragging = true;
+
+
                     StartDragDrop?.Invoke(this, e);
+                    //DoDragDrop(999, DragDropEffects.Move);
+
+
                     handled = true;
                 }
             }

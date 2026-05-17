@@ -13,18 +13,12 @@
         <OutputPath>bin\</OutputPath>
         <!-- <DefineConstants>DEBUG;TRACE</DefineConstants> -->
         <WarningLevel>4</WarningLevel>
-        <NoWarn>CS1591;CA1822</NoWarn>
+        <NoWarn>CS1591;CA1822;CS0168</NoWarn>
         <Nullable>enable</Nullable>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
         <!-- en none -->
     </PropertyGroup>
-
-    <ItemGroup>
-      <Compile Remove="old\**" />
-      <EmbeddedResource Remove="old\**" />
-      <None Remove="old\**" />
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="System.Drawing.Common" Version="6.0.0" />

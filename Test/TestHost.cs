@@ -11,8 +11,6 @@ using System.Collections.Generic;
 using System.Media;
 
 
-#pragma warning disable CS0168 // Variable is declared but never used
-
 namespace Ephemera.IconicSelector.Test
 {
     public partial class TestHost : Form
@@ -35,16 +33,24 @@ namespace Ephemera.IconicSelector.Test
                 new("WRN ", Color.Green),
             ];
 
-            icsel.Style = SelectorStyle.Icon;
-            icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-            //icsel.Style = SelectorStyle.Tile;
+            //////
+            //icsel.Style = SelectorStyle.Icon;
             //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+
+            //////
+            icsel.Style = SelectorStyle.Tile;
+            icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+
+            //////
             //icsel.Style = SelectorStyle.Fit;
             //icsel.ImageSize = new(200, 64);
+
+            //////
             //icsel.Style = SelectorStyle.Image;
             //icsel.ImageSize = new(100, 50);
+
             icsel.AllowExternalDrop = true;
-            icsel.NumColumns = 2;
+            icsel.NumColumns = 3;
             icsel.LeftMouseClick = MouseFunction.SingleSelect;
             //icsel.LeftMouseClick = MouseFunction.Click;
             icsel.IndicatorColor = Color.Red;

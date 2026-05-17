@@ -42,7 +42,8 @@ namespace Ephemera.IconicSelector.Test
             // 
             // btnGo1
             // 
-            btnGo1.Location = new Point(12, 12);
+            btnGo1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnGo1.Location = new Point(520, 22);
             btnGo1.Name = "btnGo1";
             btnGo1.Size = new Size(48, 42);
             btnGo1.TabIndex = 2;
@@ -52,7 +53,8 @@ namespace Ephemera.IconicSelector.Test
             // 
             // btnGo2
             // 
-            btnGo2.Location = new Point(12, 60);
+            btnGo2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnGo2.Location = new Point(520, 70);
             btnGo2.Name = "btnGo2";
             btnGo2.Size = new Size(50, 42);
             btnGo2.TabIndex = 3;
@@ -66,45 +68,49 @@ namespace Ephemera.IconicSelector.Test
             icsel.AllowExternalDrop = false;
             icsel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             icsel.AutoScroll = true;
+            icsel.BorderStyle = BorderStyle.FixedSingle;
             icsel.DrawFont = new Font("Calibri", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
             icsel.ImageSize = new Size(32, 32);
             icsel.IndicatorColor = Color.Purple;
             icsel.LeftMouseClick = MouseFunction.Click;
-            icsel.Location = new Point(12, 124);
+            icsel.Location = new Point(12, 22);
             icsel.Name = "icsel";
+            icsel.NumColumns = 1;
             icsel.Pad = 4;
-            icsel.Size = new Size(373, 443);
+            icsel.Size = new Size(99, 453);
             icsel.Spacing = 10;
+            icsel.Style = SelectorStyle.Icon;
             icsel.TabIndex = 4;
             // 
             // tvInfo
             // 
             tvInfo.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             tvInfo.BorderStyle = BorderStyle.FixedSingle;
-            tvInfo.Location = new Point(391, 12);
+            tvInfo.Location = new Point(520, 124);
             tvInfo.MatchUseBackground = true;
             tvInfo.MaxText = 50000;
             tvInfo.Name = "tvInfo";
             tvInfo.Prompt = "";
-            tvInfo.Size = new Size(685, 555);
+            tvInfo.Size = new Size(527, 351);
             tvInfo.TabIndex = 8;
             tvInfo.WordWrap = true;
             // 
             // tbState
             // 
-            tbState.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            tbState.Multiline = true;
+            tbState.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             tbState.BorderStyle = BorderStyle.FixedSingle;
-            tbState.Location = new Point(75, 12);
+            tbState.Location = new Point(592, 22);
+            tbState.Multiline = true;
             tbState.Name = "tbState";
-            tbState.Size = new Size(301, 90);
+            tbState.ReadOnly = true;
+            tbState.Size = new Size(455, 90);
             tbState.TabIndex = 9;
             // 
             // TestHost
             // 
             AutoScaleDimensions = new SizeF(8F, 19F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1088, 584);
+            ClientSize = new Size(1059, 492);
             Controls.Add(tbState);
             Controls.Add(tvInfo);
             Controls.Add(icsel);
@@ -113,6 +119,7 @@ namespace Ephemera.IconicSelector.Test
             Name = "TestHost";
             Text = "Form1";
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion

@@ -20,7 +20,7 @@ using Ephemera.NBagOfUis;
 namespace Ephemera.IconicSelector
 {
     /// <summary>Master control.</summary>
-    public class Selector : UserControl // ScrollableControl //UserControl  Panel?  TODO! scroll   https://www.cyotek.com/blog/creating-a-custom-single-axis-scrolling-control-in-winforms
+    public class Selector : UserControl // ScrollableControl?
     {
         #region Properties
         /// <summary>Current config.</summary>
@@ -104,14 +104,7 @@ namespace Ephemera.IconicSelector
             AllowDrop = true;
             AutoScroll = true;
 
-            // Default mode.
-            //Init(SelectorStyle.Icon, 1);
-
-            ////////////////////////////////////////////////////////////////////////
-            //AutoScrollMinSize = new(32, 32);// new Size(0, _displayedItems.Count * (this.ItemHeight + this.ItemsMargin));
-            //VerticalScroll.LargeChange = _itemdSize.Height;
-            //VerticalScroll.SmallChange = _itemdSize.Height / 3;
-
+            // Make a default image.
             _defaultImage = new(32, 32);
             using Graphics gr = Graphics.FromImage(_defaultImage);
             gr.Clear(Color.Cyan);
@@ -139,7 +132,7 @@ namespace Ephemera.IconicSelector
                         _itemdImageRect = new(Pad + ImageSize.Width / 2, Pad, ImageSize.Width, ImageSize.Height);
                         _itemdTextRect = new(Pad, _itemdImageRect.Bottom + Pad, 2 * ImageSize.Width, ImageSize.Height);
                         _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
-                        Width = Pad + NumColumns * (_itemdSize.Width + Pad);
+                        Width = Pad + NumColumns * (_itemdSize.Width + Pad) + SystemInformation.VerticalScrollBarWidth;
                     }
                     break;
 
@@ -148,7 +141,7 @@ namespace Ephemera.IconicSelector
                         _itemdImageRect = new(Pad, Pad, ImageSize.Width, ImageSize.Height);
                         _itemdTextRect = new(_itemdImageRect.Right + Pad, Pad, 2 * ImageSize.Width, ImageSize.Height);
                         _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
-                        Width = Pad + NumColumns * (_itemdSize.Width + Pad);
+                        Width = Pad + NumColumns * (_itemdSize.Width + Pad) + SystemInformation.VerticalScrollBarWidth;
                     }
                     break;
 
@@ -158,66 +151,13 @@ namespace Ephemera.IconicSelector
                         _itemdImageRect = new(0, 0, ImageSize.Width, ImageSize.Height);
                         _itemdTextRect = new(); // not used
                         _itemdSize = new(ImageSize.Width, ImageSize.Height);
-                        Width = Pad + NumColumns * (_itemdSize.Width + Pad);
+                        Width = Pad + NumColumns * (_itemdSize.Width + Pad) + SystemInformation.VerticalScrollBarWidth;
                     }
                     break;
             }
+
+            TraceState($"geometry Width:{Width} _itemdSize:{_itemdSize}");
         }
-
-        ///// <summary>
-        ///// Constructor. Determines geometry of display elements.
-        ///// <param name="style">Our flavor.</param>
-        ///// <param name="numColumns">Our flavor.</param>
-        ///// </summary>
-        //public void Init(SelectorStyle style, int numColumns)
-        //{
-        //    _style = style;
-        //    _numColumns = numColumns;
-
-        //    // Figure geometry.
-        //    switch (style)
-        //    {
-        //        case SelectorStyle.Icon:
-        //            {
-        //                _itemdImageRect = new(Pad + ImageSize.Width / 2, Pad, ImageSize.Width, ImageSize.Height);
-        //                _itemdTextRect = new(Pad, _itemdImageRect.Bottom + Pad, 2 * ImageSize.Width, ImageSize.Height);
-        //                _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
-        //            }
-        //            break;
-
-        //        case SelectorStyle.Tile:
-        //            {
-        //                _itemdImageRect = new(Pad, Pad, ImageSize.Width, ImageSize.Height);
-        //                _itemdTextRect = new(_itemdImageRect.Right + Pad, Pad, 2 * ImageSize.Width, ImageSize.Height);
-        //                _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
-        //            }
-        //            break;
-
-        //        case SelectorStyle.Image:
-        //        case SelectorStyle.Fit:
-        //            {
-        //                _itemdImageRect = new(0, 0, ImageSize.Width, ImageSize.Height);
-        //                _itemdTextRect = new(); // not used
-        //                _itemdSize = new(ImageSize.Width, ImageSize.Height);
-        //            }
-        //            break;
-        //    }
-        //}
-
-
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        ///// <param name="e"></param>
-        //protected override void OnLoad(EventArgs e)
-        //{
-        //    InitGeometry();
-        //    base.OnLoad(e);
-        //}
-
-
-
-
 
         /// <summary>
         ///  Clean up any resources being used.
@@ -263,14 +203,14 @@ namespace Ephemera.IconicSelector
                     PixelBitmap pbmpin = new(bmp);
                     PixelBitmap pbmpout = new(ImageSize.Width, ImageSize.Height);
 
-                    for (int x = 0; x < ImageSize.Width; x++)
+                    for (int x = 0; x < ImageSize.Width && x < bmp.Width; x++)
                     {
-                        for (int y = 0; y < ImageSize.Height; y++)
+                        for (int y = 0; y < ImageSize.Height && y < bmp.Height; y++)
                         {
-                            if (x < bmp.Width && y < bmp.Height)
-                            {
+                            //if (x < bmp.Width && y < bmp.Height)
+                            //{
                                 pbmpout.SetPixel(x, y, pbmpin.GetPixel(x, y));
-                            }
+                            //}
                         }
                     }
 
@@ -314,6 +254,7 @@ namespace Ephemera.IconicSelector
             }
 
             UpdateItemsList();
+            Invalidate();
         }
 
         /// <summary>
@@ -328,6 +269,7 @@ namespace Ephemera.IconicSelector
             }
 
             UpdateItemsList();
+            Invalidate();
         }
 
         /// <summary>
@@ -338,6 +280,7 @@ namespace Ephemera.IconicSelector
             _itemds.Where(itemd => itemd.Selected).ForEach(itemd => { RemoveItem(itemd); });
 
             UpdateItemsList();
+            Invalidate();
         }
 
         /// <summary>
@@ -363,42 +306,6 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-
-
-
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        void UpdateItemsList()
-        {
-            // Calc grid layout.
-            int xinc = _itemdSize.Width + Spacing;
-            int yinc = _itemdSize.Height + Spacing;
-            //int numColumns = Math.Max(1, (Width - Spacing) / xinc);
-
-            // Configure item draw.
-            for (int i = 0; i < _itemds.Count; i++)
-            {
-                int row = i / NumColumns;
-                int col = i % NumColumns;
-                int xloc = xinc * col + Spacing;
-                int yloc = yinc * row + Spacing;
-
-                _itemds[i].Location = new Point(xloc, yloc);
-                //_itemds[i].Invalidate();
-            }
-            
-            Invalidate();
-        }
-
-
-
-
-
-
-
         #region Drawing
         /// <summary>
         /// Draw the whole control.
@@ -407,34 +314,6 @@ namespace Ephemera.IconicSelector
         protected override void OnPaint(PaintEventArgs pe)
         {
             pe.Graphics.Clear(BackColor);
-
-            //pe.Graphics.TranslateTransform(AutoScrollPosition.X, AutoScrollPosition.Y);
-            // TraceState($"ASpos: {AutoScrollPosition}");
-
-            //// Calc grid layout.
-            //int xinc = _itemdSize.Width + Spacing;
-            //int yinc = _itemdSize.Height + Spacing;
-            //int numColumns = Math.Max(1, (Width - Spacing) / xinc);
-
-            //// Configure item draw.
-            //for (int i = 0; i < _itemds.Count; i++)
-            //{
-            //    int row = i / numColumns;
-            //    int col = i % numColumns;
-            //    int xloc = xinc * col + Spacing;
-            //    int yloc = yinc * row + Spacing;
-
-            //    _itemds[i].Location = new Point(xloc, yloc);
-            //    // _itemds[i].Invalidate();
-            //}
-
-
-
-            //for (int i = 0; i < _itemds.Count; i++)
-            //{
-            //    _itemds[i].Invalidate();
-            //}
-
 
             // Insert marker?
             if (_insertIndex >= 0)
@@ -455,7 +334,7 @@ namespace Ephemera.IconicSelector
 
         #region Standard events
         /// <summary>
-        /// User item selection(s).
+        /// User item selection(s). Determine if it is interpreted as select or click.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -485,12 +364,14 @@ namespace Ephemera.IconicSelector
                         // Select this one.
                         itemd.Selected = true;
                         Selection?.Invoke(this, new() { SelectedItems = [itemd.Item] });
+                        Invalidate(true);
                     }
                     break;
 
                 case (MouseButtons.Left, MouseFunction.MultiSelect):
                     itemd.Selected = !sel;
                     Selection?.Invoke(this, new() { SelectedItems = [.. _itemds.Where(itemd => itemd.Selected).Select(itemd => itemd.Item)] });
+                    Invalidate(true);
                     break;
 
                 case (_, _):
@@ -498,7 +379,7 @@ namespace Ephemera.IconicSelector
                     break;
             }
 
-            Invalidate();
+            //Invalidate();
         }
         #endregion
 
@@ -574,6 +455,16 @@ namespace Ephemera.IconicSelector
             Invalidate();
         }
 
+
+        protected override void OnDragDrop(DragEventArgs drgevent)
+        {
+            base.OnDragDrop(drgevent);
+        }
+
+
+
+
+
         /// <summary>
         /// Moves the source item to the insertion indicator.
         /// Handles drag sources of internal items and external files.
@@ -597,9 +488,9 @@ namespace Ephemera.IconicSelector
                 int srcIndex = (int)idata!;
 
                 var draggedItem = _itemds[srcIndex];
-                // Insert a copy of the dragged item at the target index.
+                // Insert a copy of the dragged item at the insert index.
                 Item it = draggedItem.Item;
-                AddItem(it.Caption, it.Bitmap, it.Value, index);
+                AddItem(it.Caption, it.Bitmap, it.Value, _insertIndex);
                 // Remove the original dragged item.
                 RemoveItem(draggedItem);
 
@@ -609,12 +500,15 @@ namespace Ephemera.IconicSelector
             if (!handled && dt.Contains(DataFormats.FileDrop) && AllowExternalDrop)
             {
                 var fdata = e.Data.GetData(DataFormats.FileDrop);
-                foreach (string target in (string[])fdata!)
+                if (fdata != null)
                 {
-                    TraceLine($"Dropped file -> [{target}]");
-                    var icon = GraphicsUtils.ExtractIconFromExecutable(target, 0, true);
-                    var fn = Path.GetFileName(target);
-                    AddItem(fn, icon?.ToBitmap(), target);
+                    foreach (string target in (string[])fdata)
+                    {
+                        TraceLine($"Dropped file -> [{target}]");
+                        var icon = GraphicsUtils.ExtractIconFromExecutable(target, 0, true);
+                        var fn = Path.GetFileName(target);
+                        AddItem(fn, icon?.ToBitmap(), target);
+                    }
                 }
 
                 handled = true;
@@ -670,37 +564,31 @@ namespace Ephemera.IconicSelector
             }
 
             SetInsert(NOT_IN_TARGET);
-
+            UpdateItemsList();
             Invalidate();
         }
         #endregion
 
         #region Internals
-        /// <summary>Resize the image to the specified width and height.</summary>
-        /// <param name="bmp">The image to resize.</param>
-        /// <param name="width">The width to resize to.</param>
-        /// <param name="height">The height to resize to.</param>
-        /// <returns>The resized image.</returns>
-        public Bitmap ResizeBitmap(Bitmap bmp, int width, int height)
+        /// <summary>
+        /// Called after master list changes.
+        /// </summary>
+        void UpdateItemsList()
         {
-            Bitmap result = new(width, height);
-            result.SetResolution(bmp.HorizontalResolution, bmp.VerticalResolution);
+            // Calc grid layout.
+            int xinc = _itemdSize.Width + Spacing;
+            int yinc = _itemdSize.Height + Spacing;
 
-            using (Graphics graphics = Graphics.FromImage(result))
+            // Configure item draw.
+            for (int i = 0; i < _itemds.Count; i++)
             {
-                // Set high quality.
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
-                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
-                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                int row = i / NumColumns;
+                int col = i % NumColumns;
+                int xloc = xinc * col + Spacing;
+                int yloc = yinc * row + Spacing;
 
-                // Draw the image.
-                graphics.DrawImage(bmp, 0, 0, result.Width, result.Height);
+                _itemds[i].Location = new Point(xloc, yloc);
             }
-
-            return result;
         }
 
         /// <summary>
@@ -736,6 +624,33 @@ namespace Ephemera.IconicSelector
             }
 
             TraceState($"SetInsert index:{index} xpos:{xpos} _insertIndex:{_insertIndex} ");
+        }
+
+        /// <summary>Resize the image to the specified width and height.</summary>
+        /// <param name="bmp">The image to resize.</param>
+        /// <param name="width">The width to resize to.</param>
+        /// <param name="height">The height to resize to.</param>
+        /// <returns>The resized image.</returns>
+        public Bitmap ResizeBitmap(Bitmap bmp, int width, int height)
+        {
+            Bitmap result = new(width, height);
+            result.SetResolution(bmp.HorizontalResolution, bmp.VerticalResolution);
+
+            using (Graphics graphics = Graphics.FromImage(result))
+            {
+                // Set high quality.
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+
+                // Draw the image.
+                graphics.DrawImage(bmp, 0, 0, result.Width, result.Height);
+            }
+
+            return result;
         }
 
         /// <summary>
