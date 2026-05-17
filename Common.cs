@@ -27,6 +27,19 @@ namespace Ephemera.IconicSelector
         Fit
     }
 
+    /// <summary>Drag and drop data.</summary>
+    public enum DroppedDataType
+    {
+        /// <summary>Default</summary>
+        None,
+        /// <summary>File name</summary>
+        File,
+        /// <summary>URL</summary>
+        Url,
+        /// <summary>Internal - DisplayItem</summary>
+        Item
+    }
+
     /// <summary>What the left mouse button does.</summary>
     public enum MouseFunction
     {
@@ -46,15 +59,22 @@ namespace Ephemera.IconicSelector
     }
 
     /// <summary>User drag-dropped something from elsewhere.</summary>
-    /// <remarks>Default constructor.</remarks>
-    public class DroppedTargetEventArgs(Item item) : EventArgs
+    public class DroppedDataEventArgs(DroppedDataType tgttype, object data) : EventArgs
     {
-        /// <summary>The new item</summary>
-        public Item NewItem { get; set; } = item;
+        /// <summary>The data type</summary>
+        public DroppedDataType DataType { get; set; } = tgttype;
+
+        /// <summary>The target</summary>
+        public object Data { get; set; } = data;
+
+        /// <summary>Read me.</summary>
+        public override string ToString()
+        {
+            return $"{DataType} [{data}]";
+        }
     }
 
-    /// <summary>User drag-dropped something from elsewhere.</summary>
-    /// <remarks>Default constructor.</remarks>
+    /// <summary>Debugging.</summary>
     public class TraceEventArgs() : EventArgs
     {
         /// <summary>Log line.</summary>

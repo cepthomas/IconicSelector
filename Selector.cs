@@ -87,7 +87,7 @@ namespace Ephemera.IconicSelector
         public event EventHandler<SelectionEventArgs>? Selection;
 
         /// <summary></summary>
-        public event EventHandler<DroppedTargetEventArgs>? DroppedTarget;
+        public event EventHandler<DroppedDataEventArgs>? DroppedData;
 
         /// <summary>Debug hook</summary>
         public event EventHandler<TraceEventArgs>? Trace;
@@ -112,15 +112,7 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        public void Init()
-        {
-            InitGeometry();
-        }
-
-        /// <summary>
-        /// Constructor. Determines geometry of display elements.
+        /// Calculates geometry of display elements.
         /// </summary>
         void InitGeometry()
         {
@@ -233,13 +225,8 @@ namespace Ephemera.IconicSelector
                 TextRect = _itemdTextRect,
                 Size = _itemdSize,
             };
-
-            itemd.DoMouseClick += Itemd_DoMouseClick;
-            itemd.StartDragDrop += Itemd_StartDragDrop;
-            itemd.DragOver += Itemd_DragOver;
-            itemd.DragDrop += Itemd_DragDrop;
-            itemd.DragEnter += Itemd_DragEnter;
-            itemd.DragLeave += Itemd_DragLeave;
+        itemd.DoMouseClick += Itemd_DoMouseClick;
+            itemd.DroppedData += Itemd_DroppedData;
 
             Controls.Add(itemd);
 
@@ -334,7 +321,7 @@ namespace Ephemera.IconicSelector
 
         #region Standard events
         /// <summary>
-        /// User item selection(s). Determine if it is interpreted as select or click.
+        /// User item selection(s). Could be select or click.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -385,150 +372,39 @@ namespace Ephemera.IconicSelector
 
         #region Drag and drop
         /// <summary>
-        /// Starts the drag-and-drop operation when an item is dragged.
+        /// Handle dropped data.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void Itemd_StartDragDrop(object? sender, MouseEventArgs e)
+        void Itemd_DroppedData(object? sender, DroppedDataEventArgs e)
         {
             int index = GetItemIndex(sender);
+            TraceLine($"Itemd_DroppedTarget() index:{index}e:{e}");
 
-            TraceLine($"Itemd_ItemDragDropStart() index:{index}");
-
-            DoDragDrop(index, DragDropEffects.Move);
-        }
-
-        /// <summary>
-        /// Sets the target drop effect.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void Itemd_DragEnter(object? sender, DragEventArgs e)
-        {
-            int index = GetItemIndex(sender);
-            if (e.Data is null) throw new InvalidOperationException();
-            var srcIndex = e.Data!.GetData(typeof(int));
-
-            if (srcIndex is not null && index != (int)srcIndex)
+            switch (e.DataType)
             {
-                TraceLine($"Itemd_DragEnter() index:{index}");
-                e.Effect = e.AllowedEffect;
-            }
+                case DroppedDataType.Item:
+                    //var idata = e.Data.GetData(typeof(int));
+                    //int srcIndex = (int)idata!;
+                    var draggedItem = (ItemDisplay)e.Data;
+                    TraceLine($"Dropped item -> [{draggedItem}]");
+                    // Insert a copy of the dragged item at the insert index.
+                    Item it = draggedItem.Item;
+                    AddItem(it.Caption, it.Bitmap, it.Value, _insertIndex);
+                    // Remove the original dragged item.
+                    RemoveItem(draggedItem);
+                    break;
 
-            SetInsert(IN_TARGET_CENTER);
+                case DroppedDataType.File:
+                    var target = (string)e.Data;
+                    TraceLine($"Dropped file -> [{target}]");
+                    var icon = GraphicsUtils.ExtractIconFromExecutable(target, 0, true);
+                    var fn = Path.GetFileName(target);
+                    AddItem(fn, icon?.ToBitmap(), target);
+                    break;
 
-            Invalidate();
-        }
-
-        /// <summary>
-        /// Moves the insertion indicator as the item is dragged.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void Itemd_DragOver(object? sender, DragEventArgs e)
-        {
-            int index = GetItemIndex(sender);
-            var itemd = _itemds[index];
-            
-            TraceState($"Itemd_DragOver index:{index} _insertIndex:{_insertIndex} X:{e.X} Y:{e.Y}");
-
-            var itemdPoint = itemd.PointToClient(new Point(e.X, e.Y));
-
-            SetInsert(index, itemdPoint.X);
-
-            Invalidate();
-        }
-
-        /// <summary>
-        /// Removes the insertion indicator when the mouse leaves the control.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>d
-        void Itemd_DragLeave(object? sender, EventArgs e)
-        {
-            int index = GetItemIndex(sender);
-
-            TraceLine($"Itemd_DragLeave() index:{index}");
-
-            SetInsert(NOT_IN_TARGET);
-
-            Invalidate();
-        }
-
-
-        protected override void OnDragDrop(DragEventArgs drgevent)
-        {
-            base.OnDragDrop(drgevent);
-        }
-
-
-
-
-
-        /// <summary>
-        /// Moves the source item to the insertion indicator.
-        /// Handles drag sources of internal items and external files.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void Itemd_DragDrop(object? sender, DragEventArgs e)
-        {
-            if (e.Data is null) throw new InvalidOperationException();
-            int index = GetItemIndex(sender);
-
-            TraceLine($"Itemd_DragDrop() index:{index} items:{_itemds.Count}");
-
-            // What do we have here?
-            var dt = e.Data.GetFormats();
-            bool handled = _insertIndex < 0;
-
-            if (!handled && dt.Contains("System.Int32"))
-            {
-                var idata = e.Data.GetData(typeof(int));
-                int srcIndex = (int)idata!;
-
-                var draggedItem = _itemds[srcIndex];
-                // Insert a copy of the dragged item at the insert index.
-                Item it = draggedItem.Item;
-                AddItem(it.Caption, it.Bitmap, it.Value, _insertIndex);
-                // Remove the original dragged item.
-                RemoveItem(draggedItem);
-
-                handled = true;
-            }
-
-            if (!handled && dt.Contains(DataFormats.FileDrop) && AllowExternalDrop)
-            {
-                var fdata = e.Data.GetData(DataFormats.FileDrop);
-                if (fdata != null)
-                {
-                    foreach (string target in (string[])fdata)
-                    {
-                        TraceLine($"Dropped file -> [{target}]");
-                        var icon = GraphicsUtils.ExtractIconFromExecutable(target, 0, true);
-                        var fn = Path.GetFileName(target);
-                        AddItem(fn, icon?.ToBitmap(), target);
-                    }
-                }
-
-                handled = true;
-            }
-
-            if (!handled && dt.Contains(DataFormats.Html) && AllowExternalDrop)
-            {
-                var hdata = e.Data.GetData(DataFormats.Html);
-
-                var s = hdata as string ?? "";
-                var parts = s.SplitByToken(Environment.NewLine);
-
-                parts.Where(p => p.Contains("<!--StartFragment")).ForEach(p =>
-                {
-                    //<!--StartFragment--><A HREF="https://www.aaa.com/watch?what">Title</A>
-                    int start = p.IndexOf("http");
-                    int end = p.IndexOf("\">", start);
-                    var fullurl = p[start..end];
-                    TraceLine($"Dropped url -> [{fullurl}]");
-
+                case DroppedDataType.Url:
+                    var fullurl = (string)e.Data;
                     var uri = new Uri(fullurl);
 
                     try
@@ -553,19 +429,12 @@ namespace Ephemera.IconicSelector
                         // Client handles.
                         throw;
                     }
-                });
+                    break;
 
-                handled = true;
+                default:
+                    // TODO1
+                    break;
             }
-
-            if (!handled)
-            {
-                // ignore
-            }
-
-            SetInsert(NOT_IN_TARGET);
-            UpdateItemsList();
-            Invalidate();
         }
         #endregion
 
@@ -589,41 +458,6 @@ namespace Ephemera.IconicSelector
 
                 _itemds[i].Location = new Point(xloc, yloc);
             }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="index">which display</param>
-        /// <param name="xpos">where in display</param>
-        void SetInsert(int index, int xpos = -1)
-        {
-            if (index == -1) // not in a target
-            {
-                _insertIndex = NOT_IN_TARGET;
-            }
-            else // in a target
-            {
-                // where?
-                if (xpos < 0) // shouldn't happen
-                {
-                    _insertIndex = NOT_IN_TARGET;
-                }
-                else if (xpos < (_itemdSize.Width / 4)) // at left edge
-                {
-                    _insertIndex = index;
-                }
-                else if (xpos > (_itemdSize.Width * 3 / 4)) // at right edge
-                {
-                    _insertIndex = index + 1;
-                }
-                else
-                {
-                    _insertIndex = IN_TARGET_CENTER;
-                }
-            }
-
-            TraceState($"SetInsert index:{index} xpos:{xpos} _insertIndex:{_insertIndex} ");
         }
 
         /// <summary>Resize the image to the specified width and height.</summary>

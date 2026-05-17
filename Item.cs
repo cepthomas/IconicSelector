@@ -51,7 +51,7 @@ namespace Ephemera.IconicSelector
         /// <summary>Read me</summary>
         public override string ToString()
         {
-            return $"capt:[{Caption}] bmp:[{Bitmap?.Size}] value:[{Value}]";
+            return $"caption:{Caption} bmp:{Bitmap?.Size} value:{Value}";
         }
     }
 }

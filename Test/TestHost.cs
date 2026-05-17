@@ -56,7 +56,7 @@ namespace Ephemera.IconicSelector.Test
             icsel.IndicatorColor = Color.Red;
             icsel.Pad = 8;
 
-            icsel.Init();
+//            icsel.Init();
 
 
             // Init the image list.
@@ -99,10 +99,10 @@ namespace Ephemera.IconicSelector.Test
                 e.SelectedItems.ForEach(it => tvInfo.Append($"  [{it}]"));
             };
 
-            icsel.DroppedTarget += (sender, e) =>
+            icsel.DroppedData += (sender, e) =>
             {
-                tvInfo.Append($"DroppedTarget ->");
-                tvInfo.Append($"  [{e.NewItem}]");
+                tvInfo.Append($"DroppedData ->");
+                tvInfo.Append($"  [{e}]");
             };
 
             icsel.Trace += (sender, e) =>

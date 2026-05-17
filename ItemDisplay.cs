@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
 using Ephemera.NBagOfTricks;
+using System.Net.Http;
 
 
 namespace Ephemera.IconicSelector
@@ -39,9 +40,16 @@ namespace Ephemera.IconicSelector
         public bool Selected = false;
         #endregion
 
+
+
+public bool AllowExternalDrop = false; //TODO1
+
+
+
         #region Events
         public event EventHandler<MouseEventArgs>? DoMouseClick;
-        public event EventHandler<MouseEventArgs>? StartDragDrop;
+        //public event EventHandler<MouseEventArgs>? StartDragDrop;
+        public event EventHandler<DroppedDataEventArgs>? DroppedData;
         #endregion
 
         #region Fields
@@ -80,43 +88,196 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-
+        #region Drag and drop
+        /// <summary>
+        /// Check if the data being dragged contains file paths etc.
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnDragEnter(DragEventArgs e)
         {
-            // Check if the data being dragged contains file paths
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            DroppedDataType tgttype = GetTargetType(e);
+
+            switch (tgttype)
             {
-                e.Effect = DragDropEffects.Copy; // Show the 'copy' cursor
-                e.Effect = DragDropEffects.Move;
-            }
-            else
-            {
-                e.Effect = DragDropEffects.None; // Reject the drop
+                case DroppedDataType.Item:
+                    e.Effect = DragDropEffects.Move;
+                    break;
+
+                case DroppedDataType.File:
+                case DroppedDataType.Url:
+                    e.Effect = AllowExternalDrop ? DragDropEffects.Copy : DragDropEffects.None;
+                    break;
+
+                default:
+                    e.Effect = DragDropEffects.None; // Reject the drop
+                    break;
             }
 
             base.OnDragEnter(e);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnDragOver(DragEventArgs e)
+        {
+            // <param name="index">which display</param>
+            // <param name="xpos">where in display</param>
+            void SetInsert(int index, int xpos = -1)
+            {
+                if (index == -1) // not in a target
+                {
+                    _insertIndex = NOT_IN_TARGET;
+                }
+                else // in a target
+                {
+                    // where?
+                    if (xpos < 0) // shouldn't happen
+                    {
+                        _insertIndex = NOT_IN_TARGET;
+                    }
+                    else if (xpos < (_itemdSize.Width / 4)) // at left edge
+                    {
+                        _insertIndex = index;
+                    }
+                    else if (xpos > (_itemdSize.Width * 3 / 4)) // at right edge
+                    {
+                        _insertIndex = index + 1;
+                    }
+                    else
+                    {
+                        _insertIndex = IN_TARGET_CENTER;
+                    }
+                }
+
+                TraceState($"OnDragOver index:{index} xpos:{xpos} _insertIndex:{_insertIndex} ");
+            }
+
+            base.OnDragOver(e);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnDragEnter(DragEventArgs e)
+        {
+            DroppedDataType tgttype = GetTargetType(e);
+
+            switch (tgttype)
+            {
+                case DroppedDataType.Item:
+                    e.Effect = DragDropEffects.Move;
+                    break;
+
+                case DroppedDataType.File:
+                case DroppedDataType.Url:
+                    e.Effect = AllowExternalDrop ? DragDropEffects.Copy : DragDropEffects.None;
+                    break;
+
+                default:
+                    e.Effect = DragDropEffects.None; // Reject the drop
+                    break;
+            }
+
+            base.OnDragEnter(e);
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnDragLeave(EventArgs e)
         {
+            // ????
             base.OnDragLeave(e);
         }
 
         protected override void OnDragDrop(DragEventArgs e)
         {
-            // Extract file paths from the external source (e.g., Windows Explorer)
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (e.Data is null) throw new InvalidOperationException();
+            //int index = GetItemIndex(sender);
 
-            foreach (string filePath in files)
+            DroppedDataType tgttype = GetTargetType(e);
+
+            switch (tgttype)
             {
-                // Add logic to update your control or collection based on the file
-                Console.WriteLine($"Dropped file: {filePath}");
+                case DroppedDataType.Item:
+                    var data = e.Data.GetData(typeof(ItemDisplay));
+                    var src = (ItemDisplay)data!;
+
+                    //TraceLine($"OnDragDrop() index:{index} items:{_itemds.Count}");
+
+                    DroppedData?.Invoke(this, new(DroppedDataType.Item, src));
+                    break;
+
+                case DroppedDataType.File:
+                    if (AllowExternalDrop)
+                    {
+                        var fdata = (string[]?)e.Data.GetData(DataFormats.FileDrop) ?? [];
+                        fdata.ForEach(fn => DroppedData?.Invoke(this, new(DroppedDataType.File, fn)));
+                    }
+                    break;
+
+                case DroppedDataType.Url:
+                    if (AllowExternalDrop)
+                    {
+                        var hdata = e.Data.GetData(DataFormats.Html);
+
+                        var s = hdata as string ?? "";
+                        var parts = s.SplitByToken(Environment.NewLine);
+
+                        parts.Where(p => p.Contains("<!--StartFragment")).ForEach(p =>
+                        {
+                            //<!--StartFragment--><A HREF="https://www.aaa.com/watch?what">Title</A>
+                            int start = p.IndexOf("http");
+                            int end = p.IndexOf("\">", start);
+                            var fullurl = p[start..end];
+                            DroppedData?.Invoke(this, new(DroppedDataType.Url, fullurl));
+                        });
+                    }
+                    break;
+
+                default:
+                    // TODO1
+                    break;
             }
 
             base.OnDragDrop(e);
         }
+        #endregion
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        DroppedDataType GetTargetType(DragEventArgs e)
+        {
+            DroppedDataType ttype = DroppedDataType.None;
 
+            if (e.Data is null) throw new InvalidOperationException();
+
+            var dt = e.Data.GetFormats();
+
+            //if (dt.Contains("System.Int32"))
+            if (dt.Contains("Ephemera.IconicSelector.ItemDisplay"))
+            {
+                ttype = DroppedDataType.Item;
+            }
+            else if (dt.Contains(DataFormats.FileDrop))
+            {
+                ttype = DroppedDataType.File;
+            }
+            else if (dt.Contains(DataFormats.Html))
+            {
+                ttype = DroppedDataType.Url;
+            }
+
+            return ttype;
+        }
 
         #region Mouse events
         /// <summary>
@@ -133,7 +294,7 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// 
+        /// Determine if this is a drag start.
         /// </summary>
         /// <param name="e"></param>
         protected override void OnMouseMove(MouseEventArgs e)
@@ -149,12 +310,8 @@ namespace Ephemera.IconicSelector
                 if (!_dragging && (deltaX > SystemInformation.DragSize.Width || deltaY > SystemInformation.DragSize.Height))
                 {
                     _dragging = true;
-
-
-                    StartDragDrop?.Invoke(this, e);
-                    //DoDragDrop(999, DragDropEffects.Move);
-
-
+                    //StartDragDrop?.Invoke(this, e);
+                    DoDragDrop(this, DragDropEffects.Move);
                     handled = true;
                 }
             }
