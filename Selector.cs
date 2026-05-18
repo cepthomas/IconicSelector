@@ -17,12 +17,13 @@ using Ephemera.NBagOfTricks;
 using Ephemera.NBagOfUis;
 
 
+
 namespace Ephemera.IconicSelector
 {
     /// <summary>Master control.</summary>
     public class Selector : UserControl // ScrollableControl?
     {
-        #region Properties      PUBLIC_API
+        #region Properties - API
         /// <summary>Current config.</summary>
         public SelectorStyle Style { get { return _style; } set { _style = value; InitGeometry(); } }
         SelectorStyle _style = SelectorStyle.Icon;
@@ -72,6 +73,9 @@ namespace Ephemera.IconicSelector
         /// <summary>ItemDisplay geometry.</summary>
         Size _itemdSize;
 
+        /// <summary>Needs to be refreshed.</summary>
+        //bool _refresh = true;
+
         /// <summary>Where to move/insert item.</summary>
         int _insertIndex = NOT_IN_TARGET;
 
@@ -82,14 +86,14 @@ namespace Ephemera.IconicSelector
         const int IN_TARGET_CENTER = -2;
         #endregion
 
-        #region Events   PUBLIC_API
+        #region Events - API
         /// <summary>Tell client that item was clicked - OpMode = Click.</summary>
         public new event EventHandler<ClickEventArgs>? Click;
 
         /// <summary>Tell client that selection(s) have changed - OpMode = *Select.</summary>
         public event EventHandler<SelectionEventArgs>? Selection;
 
-        /// <summary>Debug hook TODO1 ?</summary>
+        /// <summary>Debug hook - something permanent?</summary>
         public event EventHandler<TraceEventArgs>? Trace;
         #endregion
 
@@ -148,7 +152,7 @@ namespace Ephemera.IconicSelector
                     break;
             }
 
-            TraceState($"geometry Width:{Width} _itemdSize:{_itemdSize}");
+            TraceLine($"geometry Width:{Width} _itemdSize:{_itemdSize}");
         }
 
         /// <summary>
@@ -167,7 +171,7 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-        #region API   PUBLIC_API
+        #region Functions - API
         /// <summary>
         /// Add a new item.
         /// </summary>
@@ -199,10 +203,7 @@ namespace Ephemera.IconicSelector
                     {
                         for (int y = 0; y < ImageSize.Height && y < bmp.Height; y++)
                         {
-                            //if (x < bmp.Width && y < bmp.Height)
-                            //{
-                                pbmpout.SetPixel(x, y, pbmpin.GetPixel(x, y));
-                            //}
+                            pbmpout.SetPixel(x, y, pbmpin.GetPixel(x, y));
                         }
                     }
 
@@ -243,54 +244,48 @@ namespace Ephemera.IconicSelector
             }
 
             UpdateItemsList();
-            Invalidate(true);
+            Invalidate(true); // refresh everything
         }
 
         /// <summary>
-        /// Item management.
+        /// Remove this item.
         /// </summary>
-        public void RemoveItem(int index)
+        /// <param name="itemd"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        void RemoveItem(ItemDisplay itemd)
         {
-            if (index >= 0 && index < _itemds.Count)
-            {
-                var _itemd = _itemds[index];
-                RemoveItem(_itemd);
-            }
+            ArgumentNullException.ThrowIfNull(itemd);
+
+            Controls.Remove(itemd);
+            _itemds.Remove(itemd);
 
             UpdateItemsList();
-            Invalidate(true);
+            Invalidate(true); // refresh everything
         }
 
-        /// <summary>
-        /// Item management.
-        /// </summary>
-        public void RemoveSelectedItems()
-        {
-            _itemds.Where(itemd => itemd.Selected).ForEach(itemd => { RemoveItem(itemd); });
 
-            UpdateItemsList();
-            Invalidate(true);
-        }
+
+        ///// <summary>
+        ///// Item management.
+        ///// </summary>
+        //public void RemoveSelectedItems()
+        //{
+        //    _itemds.Where(itemd => itemd.Selected).ForEach(itemd => { RemoveItem(itemd); });
+
+        //    UpdateItemsList();
+        //    Invalidate(true);
+        //}
+
+
 
         /// <summary>
         /// Get all items.
         /// </summary>
         /// <returns>Items.</returns>
-        public List<Item> GetItems()
+        public List<Item> GetAllItems()
         {
             List<Item> res = [];
             _itemds.ForEach(itemd => res.Add(itemd.Item));
-            return res;
-        }
-
-        /// <summary>
-        /// Diagnostic.
-        /// </summary>
-        /// <returns></returns>
-        public List<string> Dump()
-        {
-            List<string> res = [];
-            _itemds.ForEach(itemd => res.Add($"{itemd}"));
             return res;
         }
         #endregion
@@ -307,14 +302,22 @@ namespace Ephemera.IconicSelector
             // Insert marker?
             if (_insertIndex >= 0)
             {
-                var itemd = _itemds[_insertIndex];
-                var loc = itemd.Location;
-
-                //var pt = PointToClient(new(0, 0));
                 using Pen pen = new(IndicatorColor, 4);
-
                 int offset = 3;
-                pe.Graphics.DrawLine(pen, loc.X - offset, loc.Y, loc.X - offset, loc.Y + itemd.Height);
+
+                // Special case for last item.
+                if (_insertIndex >= _itemds.Count)
+                {
+                    var itemd = _itemds.Last();
+                    var loc = itemd.Location;
+                    pe.Graphics.DrawLine(pen, loc.X + itemd.Width + offset, loc.Y, loc.X + itemd.Width + offset, loc.Y + itemd.Height);
+                }
+                else
+                {
+                    var itemd = _itemds[_insertIndex];
+                    var loc = itemd.Location;
+                    pe.Graphics.DrawLine(pen, loc.X - offset, loc.Y, loc.X - offset, loc.Y + itemd.Height);
+                }
             }
 
             base.OnPaint(pe);
@@ -353,20 +356,20 @@ namespace Ephemera.IconicSelector
                         // Select this one.
                         itemd.Selected = true;
                         Selection?.Invoke(this, new([itemd.Item]));
-                        Invalidate(true);
                     }
                     break;
 
                 case (MouseButtons.Left, OpMode.MultiSelect):
                     itemd.Selected = !sel;
                     Selection?.Invoke(this, new([.. _itemds.Where(itemd => itemd.Selected).Select(itemd => itemd.Item)]));
-                    Invalidate(true);
                     break;
 
                 case (_, _):
                     // ignored
                     break;
             }
+
+            Invalidate(true); // refresh everything
         }
 
         /// <summary>
@@ -398,7 +401,7 @@ namespace Ephemera.IconicSelector
                     break;
             }
 
-            Invalidate();
+            Invalidate(); // just this control
         }
 
         #endregion
@@ -469,7 +472,7 @@ namespace Ephemera.IconicSelector
 
         #region Internals
         /// <summary>
-        /// Called after master list changes.
+        /// Called after list changes.
         /// </summary>
         void UpdateItemsList()
         {
@@ -546,18 +549,27 @@ namespace Ephemera.IconicSelector
             return index;
         }
 
-        /// <summary>
-        /// Remove this item.
-        /// </summary>
-        /// <param name="itemd"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        void RemoveItem(ItemDisplay itemd)
-        {
-            ArgumentNullException.ThrowIfNull(itemd);
 
-            Controls.Remove(itemd);
-            _itemds.Remove(itemd);
-        }
+
+        ///// <summary>
+        ///// Item management.
+        ///// </summary>
+        //void RemoveItem(int index)
+        //{
+        //    if (index >= 0 && index < _itemds.Count)
+        //    {
+        //        var _itemd = _itemds[index];
+        //        RemoveItem(_itemd);
+        //    }
+
+        //    UpdateItemsList();
+        //    Invalidate(true);
+        //}
+
+
+
+
+
 
         /// <summary>
         /// 

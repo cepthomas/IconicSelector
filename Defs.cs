@@ -13,10 +13,6 @@ using Ephemera.NBagOfTricks;
 
 
 
-// TODO1 PUBLIC_API
-
-
-
 namespace Ephemera.IconicSelector
 {
     /// <summary>Selector style options.</summary>

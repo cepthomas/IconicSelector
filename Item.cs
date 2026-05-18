@@ -12,12 +12,9 @@ using System.Diagnostics;
 using Ephemera.NBagOfTricks;
 
 
-// PUBLIC_API 
-
-
 namespace Ephemera.IconicSelector
 {
-    /// <summary></summary>
+    /// <summary>Describes one item in the collection. Part of API.</summary>
     public class Item : IDisposable
     {
         /// <summary>Displayed text</summary>

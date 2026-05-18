@@ -51,7 +51,7 @@ namespace Ephemera.IconicSelector.Test
             icsel.NumColumns = 3;
             icsel.Mode = OpMode.SingleSelect;
             //icsel.Mode = OpMode.Click;
-            icsel.IndicatorColor = Color.Red;
+            icsel.IndicatorColor = Color.Purple;
             icsel.Pad = 8;
 
             // Init the images.
@@ -156,8 +156,9 @@ namespace Ephemera.IconicSelector.Test
 
         void BtnGo2_Click(object sender, EventArgs e)
         {
-            icsel.Dump().ForEach(it => tvInfo.Append($">>> {it}"));
+            icsel.GetAllItems().ForEach(it => tvInfo.Append($">>> {it}"));
         }
+
 
         /////////////////////////////////////////////////////////////////////
         ////////////////////// leftovers ////////////////////////////////////
