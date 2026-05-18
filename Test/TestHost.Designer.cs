@@ -35,7 +35,6 @@ namespace Ephemera.IconicSelector.Test
         {
             btnGo1 = new Button();
             btnGo2 = new Button();
-            icsel = new Selector();
             tvInfo = new Ephemera.NBagOfUis.TextViewer();
             tbState = new TextBox();
             SuspendLayout();
@@ -59,26 +58,6 @@ namespace Ephemera.IconicSelector.Test
             btnGo2.Text = "Go2";
             btnGo2.UseVisualStyleBackColor = true;
             btnGo2.Click += BtnGo2_Click;
-            // 
-            // icsel
-            // 
-            icsel.AllowDrop = true;
-            icsel.AllowExternalDrop = false;
-            icsel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            icsel.AutoScroll = true;
-            icsel.BorderStyle = BorderStyle.FixedSingle;
-            icsel.DrawFont = new Font("Calibri", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            icsel.ImageSize = new Size(32, 32);
-            icsel.IndicatorColor = Color.Purple;
-            icsel.Location = new Point(12, 22);
-            icsel.Mode = OpMode.Click;
-            icsel.Name = "icsel";
-            icsel.NumColumns = 1;
-            icsel.Pad = 4;
-            icsel.Size = new Size(184, 453);
-            icsel.Spacing = 10;
-            icsel.Style = SelectorStyle.Icon;
-            icsel.TabIndex = 4;
             // 
             // tvInfo
             // 
@@ -111,7 +90,6 @@ namespace Ephemera.IconicSelector.Test
             ClientSize = new Size(1132, 492);
             Controls.Add(tbState);
             Controls.Add(tvInfo);
-            Controls.Add(icsel);
             Controls.Add(btnGo2);
             Controls.Add(btnGo1);
             Name = "TestHost";
@@ -124,7 +102,6 @@ namespace Ephemera.IconicSelector.Test
 
         private Button btnGo1;
         private Button btnGo2;
-        private Selector icsel;
         private TextBox tbState;
         private Ephemera.NBagOfUis.TextViewer tvInfo;
     }

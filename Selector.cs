@@ -69,9 +69,6 @@ namespace Ephemera.IconicSelector
         /// <summary>ItemDisplay geometry.</summary>
         Size _itemdSize;
 
-        /// <summary>Needs to be refreshed.</summary>
-        //bool _refresh = true;
-
         /// <summary>Where to move/insert item.</summary>
         int _insertIndex = NOT_IN_TARGET;
 

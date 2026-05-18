@@ -16,6 +16,7 @@ namespace Ephemera.IconicSelector.Test
     {
         readonly Dictionary<string, string> _states = [];
         const int DEF_IMAGE_SIZE = 32;
+        Selector? icsel = null;
 
         public TestHost()
         {
@@ -32,25 +33,41 @@ namespace Ephemera.IconicSelector.Test
                 new("WRN ", Color.Green),
             ];
 
-            ////// Pick one
-            icsel.Style = SelectorStyle.Icon;
-            icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            if (icsel is not null) Controls.Remove(icsel);
 
-            //icsel.Style = SelectorStyle.Tile;
-            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            icsel = new Selector()
+            {
+                AllowDrop = true,
+                AllowExternalDrop = false,
+                AutoScroll = true,
+                BorderStyle = BorderStyle.FixedSingle,
+                DrawFont = new Font("Calibri", 11F, FontStyle.Regular, GraphicsUnit.Point, 0),
+                IndicatorColor = Color.Purple,
+                Location = new Point(12, 22),
+                Size = new Size(184, 453),
+                Spacing = 10,
+                Pad = 8,
 
-            //icsel.Style = SelectorStyle.Fit;
-            //icsel.ImageSize = new(200, 64);
+                // variable
+                Mode = OpMode.Click,
+                Style = SelectorStyle.Icon,
+                NumColumns = 3,
+                ImageSize = new Size(32, 32),
 
-            //icsel.Style = SelectorStyle.Image;
-            //icsel.ImageSize = new(100, 50);
+                //icsel.Mode = OpMode.SingleSelect;
+                //icsel.Mode = OpMode.Click;
 
-            icsel.AllowExternalDrop = true;
-            icsel.NumColumns = 3;
-            icsel.Mode = OpMode.SingleSelect;
-            //icsel.Mode = OpMode.Click;
-            icsel.IndicatorColor = Color.Purple;
-            icsel.Pad = 8;
+                //icsel.Style = SelectorStyle.Tile;
+                //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+
+                //icsel.Style = SelectorStyle.Fit;
+                //icsel.ImageSize = new(200, 64);
+
+                //icsel.Style = SelectorStyle.Image;
+                //icsel.ImageSize = new(100, 50);
+            };
+
+            Controls.Add(icsel);
 
             // Init the images.
             var srcdir = MiscUtils.GetSourcePath();
@@ -62,18 +79,6 @@ namespace Ephemera.IconicSelector.Test
             var bmp4 = new Bitmap(Path.Combine(srcdir, "Files", "color-picker.png"));
             //var defbmp = new Bitmap(Path.Combine(srcdir, "Files", "default.png"));
             var defbmp = GraphicsUtils.ExtractIconFromExecutable("shell32.dll", 77, true)!.ToBitmap();
-
-            //// Default image - rainbow.
-            //using PixelBitmap pbmp = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-            //int incr = 256 / DEF_IMAGE_SIZE;
-            //for (int y = 0; y < DEF_IMAGE_SIZE; y++)
-            //{
-            //    for (int x = 0; x < DEF_IMAGE_SIZE; x++)
-            //    {
-            //        pbmp.SetPixel(x, y, Color.FromArgb(255, x * incr % 256, y * incr % 256, 150));
-            //    }
-            //}
-            //var defbmp = pbmp.GetBitmap();
 
             // Add entries to selector. Null forces selector default.
             Bitmap?[] bmps = [bmp1, bmp2, bmp3, bmp4, defbmp, null];
@@ -161,6 +166,18 @@ namespace Ephemera.IconicSelector.Test
         /////////////////////////////////////////////////////////////////////
         ////////////////////// leftovers ////////////////////////////////////
         /////////////////////////////////////////////////////////////////////
+
+        //// Default image - rainbow.
+        //using PixelBitmap pbmp = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+        //int incr = 256 / DEF_IMAGE_SIZE;
+        //for (int y = 0; y < DEF_IMAGE_SIZE; y++)
+        //{
+        //    for (int x = 0; x < DEF_IMAGE_SIZE; x++)
+        //    {
+        //        pbmp.SetPixel(x, y, Color.FromArgb(255, x * incr % 256, y * incr % 256, 150));
+        //    }
+        //}
+        //var defbmp = pbmp.GetBitmap();
 
         /// <summary>Image fitting to ImageSize.</summary>
         public enum ImageFit
