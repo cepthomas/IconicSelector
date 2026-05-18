@@ -12,6 +12,9 @@ using System.Diagnostics;
 using Ephemera.NBagOfTricks;
 
 
+// PUBLIC_API 
+
+
 namespace Ephemera.IconicSelector
 {
     /// <summary></summary>
@@ -23,7 +26,7 @@ namespace Ephemera.IconicSelector
         /// <summary>Associated image.</summary>
         public Bitmap Bitmap { get; set; }
 
-        /// <summary>Carries data maningful to client.</summary>
+        /// <summary>Carries data supplied by client.</summary>
         public object Value { get; set; } = "???";
 
         /// <summary>Normal constructor</summary>

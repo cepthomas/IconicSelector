@@ -3,12 +3,13 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using Ephemera.NBagOfTricks;
-using Ephemera.IconicSelector;
 using System.Net.Http;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Media;
+using Ephemera.NBagOfTricks;
+using Ephemera.NBagOfUis;
+using Ephemera.IconicSelector;
 
 
 namespace Ephemera.IconicSelector.Test
@@ -33,41 +34,36 @@ namespace Ephemera.IconicSelector.Test
                 new("WRN ", Color.Green),
             ];
 
-            //////
-            //icsel.Style = SelectorStyle.Icon;
-            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-
-            //////
-            icsel.Style = SelectorStyle.Tile;
+            ////// Pick one
+            icsel.Style = SelectorStyle.Icon;
             icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
 
-            //////
+            //icsel.Style = SelectorStyle.Tile;
+            //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+
             //icsel.Style = SelectorStyle.Fit;
             //icsel.ImageSize = new(200, 64);
 
-            //////
             //icsel.Style = SelectorStyle.Image;
             //icsel.ImageSize = new(100, 50);
 
             icsel.AllowExternalDrop = true;
             icsel.NumColumns = 3;
-            icsel.LeftMouseClick = MouseFunction.SingleSelect;
-            //icsel.LeftMouseClick = MouseFunction.Click;
+            icsel.Mode = OpMode.SingleSelect;
+            //icsel.Mode = OpMode.Click;
             icsel.IndicatorColor = Color.Red;
             icsel.Pad = 8;
 
-//            icsel.Init();
+            // Init the images.
+            var srcdir = MiscUtils.GetSourcePath();
 
-
-            // Init the image list.
-            var sdir = MiscUtils.GetSourcePath();
-
-            var bmp1 = new Bitmap(Path.Combine(sdir, "Files", "glyphicons-22-snowflake.png"));
-            var bmp2 = new Bitmap(Path.Combine(sdir, "Files", "color-picker-small.png"));
-            using var icon = new Icon(Path.Combine(sdir, "Files", "crabe.ico"));
+            var bmp1 = new Bitmap(Path.Combine(srcdir, "Files", "glyphicons-22-snowflake.png"));
+            var bmp2 = new Bitmap(Path.Combine(srcdir, "Files", "color-picker-small.png"));
+            using var icon = new Icon(Path.Combine(srcdir, "Files", "crabe.ico"));
             var bmp3 = icon.ToBitmap();
-            var bmp4 = new Bitmap(Path.Combine(sdir, "Files", "color-picker.png"));
-            var defbmp = new Bitmap(Path.Combine(sdir, "Files", "default.png"));
+            var bmp4 = new Bitmap(Path.Combine(srcdir, "Files", "color-picker.png"));
+            //var defbmp = new Bitmap(Path.Combine(srcdir, "Files", "default.png"));
+            var defbmp = GraphicsUtils.ExtractIconFromExecutable("shell32.dll", 77, true)!.ToBitmap();
 
             //// Default image - rainbow.
             //using PixelBitmap pbmp = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
@@ -81,28 +77,25 @@ namespace Ephemera.IconicSelector.Test
             //}
             //var defbmp = pbmp.GetBitmap();
 
-            //icsel.AddItem("BOOM", bmp4, $"fullnameXXX");
-
             // Add entries to selector. Null forces selector default.
             Bitmap?[] bmps = [bmp1, bmp2, bmp3, bmp4, defbmp, null];
             var rand = new Random();
             for (int i = 0; i < 30; i++)
             {
-                //icsel.AddItem("333", bmp1, "fullname111");
                 var text = $"Item {i} etc etc etc etc";
                 icsel.AddItem(text, bmps[rand.Next(0, bmps.Length)], $"fullname{i}");
             }
 
+            // Hook up events.
             icsel.Selection += (sender, e) =>
             {
                 tvInfo.Append($"Selections ->");
                 e.SelectedItems.ForEach(it => tvInfo.Append($"  [{it}]"));
             };
 
-            icsel.DroppedData += (sender, e) =>
+            icsel.Click += (sender, e) =>
             {
-                tvInfo.Append($"DroppedData ->");
-                tvInfo.Append($"  [{e}]");
+                tvInfo.Append($"Click -> [{e}]");
             };
 
             icsel.Trace += (sender, e) =>
@@ -163,18 +156,7 @@ namespace Ephemera.IconicSelector.Test
 
         void BtnGo2_Click(object sender, EventArgs e)
         {
-            try
-            {
-                ColorDialog dlg = new();
-                dlg.ShowDialog();
-
-                //var formDnD = new Snip_DragNDrop.FormDnd();
-                //formDnD.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                tvInfo.Append($"ERR -> [{ex}]");
-            }
+            icsel.Dump().ForEach(it => tvInfo.Append($">>> {it}"));
         }
 
         /////////////////////////////////////////////////////////////////////

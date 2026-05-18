@@ -22,7 +22,7 @@ namespace Ephemera.IconicSelector
     /// <summary>Master control.</summary>
     public class Selector : UserControl // ScrollableControl?
     {
-        #region Properties
+        #region Properties      PUBLIC_API
         /// <summary>Current config.</summary>
         public SelectorStyle Style { get { return _style; } set { _style = value; InitGeometry(); } }
         SelectorStyle _style = SelectorStyle.Icon;
@@ -32,7 +32,7 @@ namespace Ephemera.IconicSelector
         int _numColumns = 1;
 
         /// <summary>What the mouse click does.</summary>
-        public MouseFunction LeftMouseClick { get; set; } = MouseFunction.Click;
+        public OpMode Mode { get; set; } = OpMode.Click;
 
         /// <summary>Allow drag and drop (files) from other applications.</summary>
         public bool AllowExternalDrop { get; set; } = false;
@@ -82,14 +82,14 @@ namespace Ephemera.IconicSelector
         const int IN_TARGET_CENTER = -2;
         #endregion
 
-        #region Events
-        /// <summary></summary>
+        #region Events   PUBLIC_API
+        /// <summary>Tell client that item was clicked - OpMode = Click.</summary>
+        public new event EventHandler<ClickEventArgs>? Click;
+
+        /// <summary>Tell client that selection(s) have changed - OpMode = *Select.</summary>
         public event EventHandler<SelectionEventArgs>? Selection;
 
-        /// <summary></summary>
-        public event EventHandler<DroppedDataEventArgs>? DroppedData;
-
-        /// <summary>Debug hook</summary>
+        /// <summary>Debug hook TODO1 ?</summary>
         public event EventHandler<TraceEventArgs>? Trace;
         #endregion
 
@@ -107,8 +107,8 @@ namespace Ephemera.IconicSelector
             // Make a default image.
             _defaultImage = new(32, 32);
             using Graphics gr = Graphics.FromImage(_defaultImage);
-            gr.Clear(Color.Cyan);
-            gr.DrawString("?", Font, Brushes.Black, 2, 2);
+            gr.Clear(Color.LightSalmon);
+            gr.DrawString($"????", Font, Brushes.Black, 2, 2);
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace Ephemera.IconicSelector
                         _itemdImageRect = new(Pad + ImageSize.Width / 2, Pad, ImageSize.Width, ImageSize.Height);
                         _itemdTextRect = new(Pad, _itemdImageRect.Bottom + Pad, 2 * ImageSize.Width, ImageSize.Height);
                         _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
-                        Width = Pad + NumColumns * (_itemdSize.Width + Pad) + SystemInformation.VerticalScrollBarWidth;
+                        Width = Spacing + NumColumns * (_itemdSize.Width + Spacing) + SystemInformation.VerticalScrollBarWidth;
                     }
                     break;
 
@@ -133,7 +133,7 @@ namespace Ephemera.IconicSelector
                         _itemdImageRect = new(Pad, Pad, ImageSize.Width, ImageSize.Height);
                         _itemdTextRect = new(_itemdImageRect.Right + Pad, Pad, 2 * ImageSize.Width, ImageSize.Height);
                         _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
-                        Width = Pad + NumColumns * (_itemdSize.Width + Pad) + SystemInformation.VerticalScrollBarWidth;
+                        Width = Spacing + NumColumns * (_itemdSize.Width + Spacing) + SystemInformation.VerticalScrollBarWidth;
                     }
                     break;
 
@@ -143,7 +143,7 @@ namespace Ephemera.IconicSelector
                         _itemdImageRect = new(0, 0, ImageSize.Width, ImageSize.Height);
                         _itemdTextRect = new(); // not used
                         _itemdSize = new(ImageSize.Width, ImageSize.Height);
-                        Width = Pad + NumColumns * (_itemdSize.Width + Pad) + SystemInformation.VerticalScrollBarWidth;
+                        Width = Spacing + NumColumns * (_itemdSize.Width + Spacing) + SystemInformation.VerticalScrollBarWidth;
                     }
                     break;
             }
@@ -167,7 +167,7 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-        #region API
+        #region API   PUBLIC_API
         /// <summary>
         /// Add a new item.
         /// </summary>
@@ -224,9 +224,11 @@ namespace Ephemera.IconicSelector
                 ImageRect = _itemdImageRect,
                 TextRect = _itemdTextRect,
                 Size = _itemdSize,
+                AllowExternalDrop = AllowExternalDrop,
             };
-        itemd.DoMouseClick += Itemd_DoMouseClick;
-            itemd.DroppedData += Itemd_DroppedData;
+            itemd.DoMouseClick += Itemd_DoMouseClick;
+            itemd.DroppedPayload += Itemd_DroppedPayload;
+            itemd.CursorLocationChanged += Itemd_CursorLocationChanged;
 
             Controls.Add(itemd);
 
@@ -241,7 +243,7 @@ namespace Ephemera.IconicSelector
             }
 
             UpdateItemsList();
-            Invalidate();
+            Invalidate(true);
         }
 
         /// <summary>
@@ -256,7 +258,7 @@ namespace Ephemera.IconicSelector
             }
 
             UpdateItemsList();
-            Invalidate();
+            Invalidate(true);
         }
 
         /// <summary>
@@ -267,7 +269,7 @@ namespace Ephemera.IconicSelector
             _itemds.Where(itemd => itemd.Selected).ForEach(itemd => { RemoveItem(itemd); });
 
             UpdateItemsList();
-            Invalidate();
+            Invalidate(true);
         }
 
         /// <summary>
@@ -288,7 +290,7 @@ namespace Ephemera.IconicSelector
         public List<string> Dump()
         {
             List<string> res = [];
-            _itemds.ForEach(itemd => res.Add(itemd.Item.ToString()));
+            _itemds.ForEach(itemd => res.Add($"{itemd}"));
             return res;
         }
         #endregion
@@ -319,7 +321,7 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-        #region Standard events
+        #region Events
         /// <summary>
         /// User item selection(s). Could be select or click.
         /// </summary>
@@ -332,17 +334,17 @@ namespace Ephemera.IconicSelector
             var itemd = (ItemDisplay)sender;
             bool sel = itemd.Selected; // current
 
-            switch (e.Button, LeftMouseClick)
+            switch (e.Button, Mode)
             {
-                case (MouseButtons.Left, MouseFunction.Click):
-                    Selection?.Invoke(this, new() { SelectedItems = [itemd.Item] });
+                case (MouseButtons.Left, OpMode.Click):
+                    Click?.Invoke(this, new(itemd.Item));
                     break;
 
-                case (MouseButtons.Left, MouseFunction.SingleSelect):
+                case (MouseButtons.Left, OpMode.SingleSelect):
                     if (sel)
                     {
                         itemd.Selected = false;
-                        Selection?.Invoke(this, new()); // no select
+                        Selection?.Invoke(this, new([])); // no select
                     }
                     else
                     {
@@ -350,14 +352,14 @@ namespace Ephemera.IconicSelector
                         _itemds.ForEach(itemd => itemd.Selected = false);
                         // Select this one.
                         itemd.Selected = true;
-                        Selection?.Invoke(this, new() { SelectedItems = [itemd.Item] });
+                        Selection?.Invoke(this, new([itemd.Item]));
                         Invalidate(true);
                     }
                     break;
 
-                case (MouseButtons.Left, MouseFunction.MultiSelect):
+                case (MouseButtons.Left, OpMode.MultiSelect):
                     itemd.Selected = !sel;
-                    Selection?.Invoke(this, new() { SelectedItems = [.. _itemds.Where(itemd => itemd.Selected).Select(itemd => itemd.Item)] });
+                    Selection?.Invoke(this, new([.. _itemds.Where(itemd => itemd.Selected).Select(itemd => itemd.Item)]));
                     Invalidate(true);
                     break;
 
@@ -365,9 +367,40 @@ namespace Ephemera.IconicSelector
                     // ignored
                     break;
             }
-
-            //Invalidate();
         }
+
+        /// <summary>
+        /// Handle cursor change.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void Itemd_CursorLocationChanged(object? sender, CursorLocationEventArgs e)
+        {
+            int index = GetItemIndex(sender);
+            TraceLine($"Itemd_CursorLocationChange() index:{index}e:{e}");
+
+            switch(e.Location)
+            {
+                case CursorLocation.Left:
+                    _insertIndex = index;
+                    break;
+
+                case CursorLocation.Right:
+                    _insertIndex = index + 1;
+                    break;
+
+                case CursorLocation.Center:
+                    _insertIndex = IN_TARGET_CENTER;
+                    break;
+
+                case CursorLocation.None:
+                    _insertIndex = NOT_IN_TARGET;
+                    break;
+            }
+
+            Invalidate();
+        }
+
         #endregion
 
         #region Drag and drop
@@ -376,17 +409,15 @@ namespace Ephemera.IconicSelector
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void Itemd_DroppedData(object? sender, DroppedDataEventArgs e)
+        void Itemd_DroppedPayload(object? sender, DroppedPayloadEventArgs e)
         {
             int index = GetItemIndex(sender);
-            TraceLine($"Itemd_DroppedTarget() index:{index}e:{e}");
+            TraceLine($"Itemd_DroppedPayload() index:{index}e:{e}");
 
             switch (e.DataType)
             {
-                case DroppedDataType.Item:
-                    //var idata = e.Data.GetData(typeof(int));
-                    //int srcIndex = (int)idata!;
-                    var draggedItem = (ItemDisplay)e.Data;
+                case DroppedPayloadType.Item:
+                    var draggedItem = (ItemDisplay)e.Payload;
                     TraceLine($"Dropped item -> [{draggedItem}]");
                     // Insert a copy of the dragged item at the insert index.
                     Item it = draggedItem.Item;
@@ -395,16 +426,16 @@ namespace Ephemera.IconicSelector
                     RemoveItem(draggedItem);
                     break;
 
-                case DroppedDataType.File:
-                    var target = (string)e.Data;
-                    TraceLine($"Dropped file -> [{target}]");
-                    var icon = GraphicsUtils.ExtractIconFromExecutable(target, 0, true);
-                    var fn = Path.GetFileName(target);
-                    AddItem(fn, icon?.ToBitmap(), target);
+                case DroppedPayloadType.File:
+                    var payload = (string)e.Payload;
+                    TraceLine($"Dropped file -> [{payload}]");
+                    var icon = GraphicsUtils.ExtractIconFromExecutable(payload, 0, true);
+                    var fn = Path.GetFileName(payload);
+                    AddItem(fn, icon?.ToBitmap(), payload);
                     break;
 
-                case DroppedDataType.Url:
-                    var fullurl = (string)e.Data;
+                case DroppedPayloadType.Url:
+                    var fullurl = (string)e.Payload;
                     var uri = new Uri(fullurl);
 
                     try
@@ -412,7 +443,6 @@ namespace Ephemera.IconicSelector
                         // Try to get favicon.
                         using var httpClient = new HttpClient();
                         var ss = $"https://www.google.com/s2/favicons?domain={uri.Host}";
-
                         // Run async client synchronously. Could be dangerous...
                         var task = Task.Run(() => httpClient.GetStreamAsync(ss));
                         task.Wait();
@@ -432,8 +462,7 @@ namespace Ephemera.IconicSelector
                     break;
 
                 default:
-                    // TODO1
-                    break;
+                    throw new InvalidOperationException();
             }
         }
         #endregion
@@ -465,7 +494,7 @@ namespace Ephemera.IconicSelector
         /// <param name="width">The width to resize to.</param>
         /// <param name="height">The height to resize to.</param>
         /// <returns>The resized image.</returns>
-        public Bitmap ResizeBitmap(Bitmap bmp, int width, int height)
+        Bitmap ResizeBitmap(Bitmap bmp, int width, int height)
         {
             Bitmap result = new(width, height);
             result.SetResolution(bmp.HorizontalResolution, bmp.VerticalResolution);

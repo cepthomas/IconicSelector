@@ -12,9 +12,14 @@ using System.Diagnostics;
 using Ephemera.NBagOfTricks;
 
 
+
+// TODO1 PUBLIC_API
+
+
+
 namespace Ephemera.IconicSelector
 {
-    /// <summary>Supported styles.</summary>
+    /// <summary>Selector style options.</summary>
     public enum SelectorStyle
     {
         /// <summary>Icon of ImageSize above, text block below</summary>
@@ -27,51 +32,29 @@ namespace Ephemera.IconicSelector
         Fit
     }
 
-    /// <summary>Drag and drop data.</summary>
-    public enum DroppedDataType
+    /// <summary>Selector operation mode.</summary>
+    public enum OpMode
     {
-        /// <summary>Default</summary>
-        None,
-        /// <summary>File name</summary>
-        File,
-        /// <summary>URL</summary>
-        Url,
-        /// <summary>Internal - DisplayItem</summary>
-        Item
-    }
-
-    /// <summary>What the left mouse button does.</summary>
-    public enum MouseFunction
-    {
-        /// <summary>One only selected.</summary>
+        /// <summary>One only selection.</summary>
         SingleSelect,
-        /// <summary>One or more selected.</summary>
+        /// <summary>One or more selection.</summary>
         MultiSelect,
         /// <summary>Standard single click.</summary>
         Click,
     }
 
-    /// <summary>User selection(s) have changed.</summary>
-    public class SelectionEventArgs : EventArgs
+    /// <summary>User clicked item.</summary>
+    public class ClickEventArgs(Item item) : EventArgs
     {
-        /// <summary>The selection</summary>
-        public List<Item> SelectedItems { get; set; } = [];
+        /// <summary>The item</summary>
+        public Item ClickedItem { get; init; } = item;
     }
 
-    /// <summary>User drag-dropped something from elsewhere.</summary>
-    public class DroppedDataEventArgs(DroppedDataType tgttype, object data) : EventArgs
+    /// <summary>User selection(s) have changed.</summary>
+    public class SelectionEventArgs(List<Item> items) : EventArgs
     {
-        /// <summary>The data type</summary>
-        public DroppedDataType DataType { get; set; } = tgttype;
-
-        /// <summary>The target</summary>
-        public object Data { get; set; } = data;
-
-        /// <summary>Read me.</summary>
-        public override string ToString()
-        {
-            return $"{DataType} [{data}]";
-        }
+        /// <summary>The selection(s)</summary>
+        public List<Item> SelectedItems { get; init; } = items;
     }
 
     /// <summary>Debugging.</summary>

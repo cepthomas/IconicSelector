@@ -16,16 +16,77 @@ using System.Net.Http;
 
 namespace Ephemera.IconicSelector
 {
+    /// <summary>Drag and drop payload data.</summary>
+    internal enum DroppedPayloadType
+    {
+        /// <summary>Default</summary>
+        None,
+        /// <summary>File name</summary>
+        File,
+        /// <summary>URL</summary>
+        Url,
+        /// <summary>Internal - DisplayItem</summary>
+        Item
+    }
+
+    /// <summary>Where the cursor is in ItemDisplay.</summary>
+    internal enum CursorLocation
+    {
+        /// <summary>Default</summary>
+        None,
+        /// <summary></summary>
+        Left,
+        /// <summary></summary>
+        Right,
+        /// <summary></summary>
+        Center
+    }
+
+    /// <summary>User drag-dropped something from elsewhere.</summary>
+    internal class DroppedPayloadEventArgs(DroppedPayloadType tgttype, object payload) : EventArgs
+    {
+        /// <summary>The payload type</summary>
+        public DroppedPayloadType DataType { get; init; } = tgttype;
+
+        /// <summary>The target</summary>
+        public object Payload { get; init; } = payload;
+
+        /// <summary>Read me.</summary>
+        public override string ToString()
+        {
+            return $"{DataType} [{Payload}]";
+        }
+    }
+
+    /// <summary>User moving over item.</summary>
+    internal class CursorLocationEventArgs(CursorLocation cloc) : EventArgs
+    {
+        /// <summary>The payload type</summary>
+        public CursorLocation Location { get; init; } = cloc;
+
+        /// <summary>Read me.</summary>
+        public override string ToString()
+        {
+            return $"{Location} [{Location}]";
+        }
+    }
+
     /// <summary>
     /// One selectable item.
     /// Differentiates start DragAndDrop from simple click.
     /// </summary>
     [ToolboxItem(false), Browsable(false)] // not useable in designer
-    public class ItemDisplay : UserControl
+    internal class ItemDisplay : UserControl
     {
         #region Properties
         /// <summary>The owned item.</summary>
         public Item Item { get; init; }
+
+        /// <summary></summary>
+        public bool Selected = false;
+
+        /// <summary></summary>
+        public bool AllowExternalDrop = false;
 
         /// <summary>Geometry.</summary>
         public Rectangle ImageRect { get; init; } = new();
@@ -35,26 +96,18 @@ namespace Ephemera.IconicSelector
 
         /// <summary>Cosmetics.</summary>
         public Color IndicatorColor { get; set; } = Color.Aqua;
-
-        /// <summary></summary>
-        public bool Selected = false;
         #endregion
-
-
-
-public bool AllowExternalDrop = false; //TODO1
-
-
 
         #region Events
         public event EventHandler<MouseEventArgs>? DoMouseClick;
-        //public event EventHandler<MouseEventArgs>? StartDragDrop;
-        public event EventHandler<DroppedDataEventArgs>? DroppedData;
+        public event EventHandler<DroppedPayloadEventArgs>? DroppedPayload;
+        public event EventHandler<CursorLocationEventArgs>? CursorLocationChanged;
         #endregion
 
         #region Fields
         Point _dragStart;
         bool _dragging = false;
+        CursorLocation _lastCursorLoc = CursorLocation.None;
         #endregion
 
         #region Lifecycle
@@ -84,75 +137,58 @@ public bool AllowExternalDrop = false; //TODO1
         /// <summary>Read me</summary>
         public override string ToString()
         {
-            return $"item:{Item} sel:{Selected}";
+            return $"Item:{Item} Location:{ Location} Selected:{Selected}";
         }
         #endregion
 
-        #region Drag and drop
+        #region Drag and drop        
         /// <summary>
-        /// Check if the data being dragged contains file paths etc.
+        /// Sets the target drop effect.
         /// </summary>
         /// <param name="e"></param>
         protected override void OnDragEnter(DragEventArgs e)
         {
-            DroppedDataType tgttype = GetTargetType(e);
+            DroppedPayloadType tgttype = GetTargetType(e);
+            //TraceLine($"OnDragEnter() index:{index}");
 
-            switch (tgttype)
+            e.Effect = tgttype switch
             {
-                case DroppedDataType.Item:
-                    e.Effect = DragDropEffects.Move;
-                    break;
-
-                case DroppedDataType.File:
-                case DroppedDataType.Url:
-                    e.Effect = AllowExternalDrop ? DragDropEffects.Copy : DragDropEffects.None;
-                    break;
-
-                default:
-                    e.Effect = DragDropEffects.None; // Reject the drop
-                    break;
-            }
+                DroppedPayloadType.Item => DragDropEffects.Move,
+                DroppedPayloadType.File or DroppedPayloadType.Url => AllowExternalDrop ? DragDropEffects.Copy : DragDropEffects.None,
+                _ => DragDropEffects.None,// Reject the drop
+            };
 
             base.OnDragEnter(e);
         }
 
         /// <summary>
-        /// 
+        /// Determine behavior based on location in control.
         /// </summary>
         /// <param name="e"></param>
         protected override void OnDragOver(DragEventArgs e)
         {
-            // <param name="index">which display</param>
-            // <param name="xpos">where in display</param>
-            void SetInsert(int index, int xpos = -1)
-            {
-                if (index == -1) // not in a target
-                {
-                    _insertIndex = NOT_IN_TARGET;
-                }
-                else // in a target
-                {
-                    // where?
-                    if (xpos < 0) // shouldn't happen
-                    {
-                        _insertIndex = NOT_IN_TARGET;
-                    }
-                    else if (xpos < (_itemdSize.Width / 4)) // at left edge
-                    {
-                        _insertIndex = index;
-                    }
-                    else if (xpos > (_itemdSize.Width * 3 / 4)) // at right edge
-                    {
-                        _insertIndex = index + 1;
-                    }
-                    else
-                    {
-                        _insertIndex = IN_TARGET_CENTER;
-                    }
-                }
+            var pt = PointToClient(new Point(e.X, e.Y));
+            CursorLocation newLoc;
 
-                TraceState($"OnDragOver index:{index} xpos:{xpos} _insertIndex:{_insertIndex} ");
+            if (pt.X < (Width / 4))
+            {
+                newLoc = CursorLocation.Left;
             }
+            else if (pt.X > (Width * 3 / 4))
+            {
+                newLoc = CursorLocation.Right;
+            }
+            else
+            {
+                newLoc = CursorLocation.Center;
+            }
+
+            if (newLoc != _lastCursorLoc)
+            {
+                CursorLocationChanged?.Invoke(this, new(newLoc));
+            }
+
+            _lastCursorLoc = newLoc;
 
             base.OnDragOver(e);
         }
@@ -161,69 +197,41 @@ public bool AllowExternalDrop = false; //TODO1
         /// 
         /// </summary>
         /// <param name="e"></param>
-        protected override void OnDragEnter(DragEventArgs e)
-        {
-            DroppedDataType tgttype = GetTargetType(e);
-
-            switch (tgttype)
-            {
-                case DroppedDataType.Item:
-                    e.Effect = DragDropEffects.Move;
-                    break;
-
-                case DroppedDataType.File:
-                case DroppedDataType.Url:
-                    e.Effect = AllowExternalDrop ? DragDropEffects.Copy : DragDropEffects.None;
-                    break;
-
-                default:
-                    e.Effect = DragDropEffects.None; // Reject the drop
-                    break;
-            }
-
-            base.OnDragEnter(e);
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="e"></param>
         protected override void OnDragLeave(EventArgs e)
         {
-            // ????
+            //TraceLine($"OnDragLeave() index:{index}");
+            _lastCursorLoc = CursorLocation.None;
+            CursorLocationChanged?.Invoke(this, new(_lastCursorLoc));
+
             base.OnDragLeave(e);
         }
 
+        /// <summary>
+        /// Process dropped payload.
+        /// </summary>
+        /// <param name="e"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         protected override void OnDragDrop(DragEventArgs e)
         {
             if (e.Data is null) throw new InvalidOperationException();
-            //int index = GetItemIndex(sender);
+            DroppedPayloadType tgttype = GetTargetType(e);
 
-            DroppedDataType tgttype = GetTargetType(e);
-
-            switch (tgttype)
+            if (_lastCursorLoc == CursorLocation.Left || _lastCursorLoc == CursorLocation.Right)
             {
-                case DroppedDataType.Item:
-                    var data = e.Data.GetData(typeof(ItemDisplay));
-                    var src = (ItemDisplay)data!;
+                switch (tgttype)
+                {
+                    case DroppedPayloadType.Item:
+                        var data = e.Data.GetData(typeof(ItemDisplay));
+                        var src = (ItemDisplay)data!;
+                        DroppedPayload?.Invoke(this, new(DroppedPayloadType.Item, src));
+                        break;
 
-                    //TraceLine($"OnDragDrop() index:{index} items:{_itemds.Count}");
-
-                    DroppedData?.Invoke(this, new(DroppedDataType.Item, src));
-                    break;
-
-                case DroppedDataType.File:
-                    if (AllowExternalDrop)
-                    {
+                    case DroppedPayloadType.File:
                         var fdata = (string[]?)e.Data.GetData(DataFormats.FileDrop) ?? [];
-                        fdata.ForEach(fn => DroppedData?.Invoke(this, new(DroppedDataType.File, fn)));
-                    }
-                    break;
+                        fdata.ForEach(fn => DroppedPayload?.Invoke(this, new(DroppedPayloadType.File, fn)));
+                        break;
 
-                case DroppedDataType.Url:
-                    if (AllowExternalDrop)
-                    {
+                    case DroppedPayloadType.Url:
                         var hdata = e.Data.GetData(DataFormats.Html);
 
                         var s = hdata as string ?? "";
@@ -235,14 +243,13 @@ public bool AllowExternalDrop = false; //TODO1
                             int start = p.IndexOf("http");
                             int end = p.IndexOf("\">", start);
                             var fullurl = p[start..end];
-                            DroppedData?.Invoke(this, new(DroppedDataType.Url, fullurl));
+                            DroppedPayload?.Invoke(this, new(DroppedPayloadType.Url, fullurl));
                         });
-                    }
-                    break;
+                        break;
 
-                default:
-                    // TODO1
-                    break;
+                    default:
+                        throw new InvalidOperationException();
+                }
             }
 
             base.OnDragDrop(e);
@@ -250,30 +257,29 @@ public bool AllowExternalDrop = false; //TODO1
         #endregion
 
         /// <summary>
-        /// 
+        /// Helper function.
         /// </summary>
         /// <param name="e"></param>
         /// <returns></returns>
-        DroppedDataType GetTargetType(DragEventArgs e)
+        DroppedPayloadType GetTargetType(DragEventArgs e)
         {
-            DroppedDataType ttype = DroppedDataType.None;
+            DroppedPayloadType ttype = DroppedPayloadType.None;
 
             if (e.Data is null) throw new InvalidOperationException();
 
             var dt = e.Data.GetFormats();
 
-            //if (dt.Contains("System.Int32"))
             if (dt.Contains("Ephemera.IconicSelector.ItemDisplay"))
             {
-                ttype = DroppedDataType.Item;
+                ttype = DroppedPayloadType.Item;
             }
             else if (dt.Contains(DataFormats.FileDrop))
             {
-                ttype = DroppedDataType.File;
+                ttype = DroppedPayloadType.File;
             }
             else if (dt.Contains(DataFormats.Html))
             {
-                ttype = DroppedDataType.Url;
+                ttype = DroppedPayloadType.Url;
             }
 
             return ttype;
@@ -343,7 +349,8 @@ public bool AllowExternalDrop = false; //TODO1
         /// <param name="pe"></param>
         protected override void OnPaint(PaintEventArgs pe)
         {
-            pe.Graphics.Clear(BackColor);
+            //pe.Graphics.Clear(BackColor);
+            pe.Graphics.Clear(Color.LightBlue);
 
             // Main content.
             if (!ImageRect.IsEmpty)
@@ -359,10 +366,10 @@ public bool AllowExternalDrop = false; //TODO1
 
             if (Selected) // Draw selection box.
             {
-                int box = 3;
+                int boxsz = 3;
                 Rectangle rect = ClientRectangle;
-                //rect.Inflate(-box, -box);
-                using Pen pen = new(IndicatorColor, box);
+                //rect.Inflate(-boxsz, -boxsz);
+                using Pen pen = new(IndicatorColor, boxsz);
                 pe.Graphics.DrawRectangle(pen, rect);
             }
 
