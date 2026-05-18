@@ -1,21 +1,17 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Diagnostics;
-using System.Text.Json.Serialization;
-using System.Net.Http;
 using System.Drawing.Drawing2D;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.IO;
 using Ephemera.NBagOfTricks;
 using Ephemera.NBagOfUis;
-
 
 
 namespace Ephemera.IconicSelector
@@ -263,21 +259,6 @@ namespace Ephemera.IconicSelector
             Invalidate(true); // refresh everything
         }
 
-
-
-        ///// <summary>
-        ///// Item management.
-        ///// </summary>
-        //public void RemoveSelectedItems()
-        //{
-        //    _itemds.Where(itemd => itemd.Selected).ForEach(itemd => { RemoveItem(itemd); });
-
-        //    UpdateItemsList();
-        //    Invalidate(true);
-        //}
-
-
-
         /// <summary>
         /// Get all items.
         /// </summary>
@@ -290,41 +271,39 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-        #region Drawing
+        #region Events
         /// <summary>
-        /// Draw the whole control.
+        /// Handle cursor change.
         /// </summary>
-        /// <param name="pe"></param>
-        protected override void OnPaint(PaintEventArgs pe)
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void Itemd_CursorLocationChanged(object? sender, CursorLocationEventArgs e)
         {
-            pe.Graphics.Clear(BackColor);
+            int index = GetItemIndex(sender);
+            TraceLine($"Itemd_CursorLocationChange() index:{index}e:{e}");
 
-            // Insert marker?
-            if (_insertIndex >= 0)
+            switch(e.Location)
             {
-                using Pen pen = new(IndicatorColor, 4);
-                int offset = 3;
+                case CursorLocation.Left:
+                    _insertIndex = index;
+                    break;
 
-                // Special case for last item.
-                if (_insertIndex >= _itemds.Count)
-                {
-                    var itemd = _itemds.Last();
-                    var loc = itemd.Location;
-                    pe.Graphics.DrawLine(pen, loc.X + itemd.Width + offset, loc.Y, loc.X + itemd.Width + offset, loc.Y + itemd.Height);
-                }
-                else
-                {
-                    var itemd = _itemds[_insertIndex];
-                    var loc = itemd.Location;
-                    pe.Graphics.DrawLine(pen, loc.X - offset, loc.Y, loc.X - offset, loc.Y + itemd.Height);
-                }
+                case CursorLocation.Right:
+                    _insertIndex = index + 1;
+                    break;
+
+                case CursorLocation.Center:
+                    _insertIndex = IN_TARGET_CENTER;
+                    break;
+
+                case CursorLocation.None:
+                    _insertIndex = NOT_IN_TARGET;
+                    break;
             }
 
-            base.OnPaint(pe);
+            Invalidate(); // just this control
         }
-        #endregion
 
-        #region Events
         /// <summary>
         /// User item selection(s). Could be select or click.
         /// </summary>
@@ -371,39 +350,40 @@ namespace Ephemera.IconicSelector
 
             Invalidate(true); // refresh everything
         }
+        #endregion
 
+        #region Drawing
         /// <summary>
-        /// Handle cursor change.
+        /// Draw the whole control.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void Itemd_CursorLocationChanged(object? sender, CursorLocationEventArgs e)
+        /// <param name="pe"></param>
+        protected override void OnPaint(PaintEventArgs pe)
         {
-            int index = GetItemIndex(sender);
-            TraceLine($"Itemd_CursorLocationChange() index:{index}e:{e}");
+            pe.Graphics.Clear(BackColor);
 
-            switch(e.Location)
+            // Insert marker?
+            if (_insertIndex >= 0)
             {
-                case CursorLocation.Left:
-                    _insertIndex = index;
-                    break;
+                using Pen pen = new(IndicatorColor, 4);
+                int offset = 3;
 
-                case CursorLocation.Right:
-                    _insertIndex = index + 1;
-                    break;
-
-                case CursorLocation.Center:
-                    _insertIndex = IN_TARGET_CENTER;
-                    break;
-
-                case CursorLocation.None:
-                    _insertIndex = NOT_IN_TARGET;
-                    break;
+                // Special case for last item.
+                if (_insertIndex >= _itemds.Count)
+                {
+                    var itemd = _itemds.Last();
+                    var loc = itemd.Location;
+                    pe.Graphics.DrawLine(pen, loc.X + itemd.Width + offset, loc.Y, loc.X + itemd.Width + offset, loc.Y + itemd.Height);
+                }
+                else
+                {
+                    var itemd = _itemds[_insertIndex];
+                    var loc = itemd.Location;
+                    pe.Graphics.DrawLine(pen, loc.X - offset, loc.Y, loc.X - offset, loc.Y + itemd.Height);
+                }
             }
 
-            Invalidate(); // just this control
+            base.OnPaint(pe);
         }
-
         #endregion
 
         #region Drag and drop
@@ -548,28 +528,6 @@ namespace Ephemera.IconicSelector
             int index = _itemds.IndexOf(itemd);
             return index;
         }
-
-
-
-        ///// <summary>
-        ///// Item management.
-        ///// </summary>
-        //void RemoveItem(int index)
-        //{
-        //    if (index >= 0 && index < _itemds.Count)
-        //    {
-        //        var _itemd = _itemds[index];
-        //        RemoveItem(_itemd);
-        //    }
-
-        //    UpdateItemsList();
-        //    Invalidate(true);
-        //}
-
-
-
-
-
 
         /// <summary>
         /// 

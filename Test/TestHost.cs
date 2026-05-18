@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Windows.Forms;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Drawing.Imaging;
-using System.Collections.Generic;
-using System.Media;
 using Ephemera.NBagOfTricks;
 using Ephemera.NBagOfUis;
 using Ephemera.IconicSelector;
