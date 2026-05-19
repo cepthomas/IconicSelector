@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -9,6 +10,7 @@ using Ephemera.NBagOfTricks;
 
 namespace Ephemera.IconicSelector
 {
+    #region Types
     /// <summary>Drag and drop payload data.</summary>
     internal enum DroppedPayloadType
     {
@@ -63,10 +65,11 @@ namespace Ephemera.IconicSelector
             return $"{Location} [{Location}]";
         }
     }
+    #endregion
+
 
     /// <summary>
-    /// One selectable item.
-    /// Differentiates start DragAndDrop from simple click.
+    /// One selectable item. Differentiates start DragAndDrop from simple click.
     /// </summary>
     [ToolboxItem(false), Browsable(false)] // not useable in designer
     internal class ItemDisplay : UserControl
@@ -95,12 +98,18 @@ namespace Ephemera.IconicSelector
         public event EventHandler<MouseEventArgs>? DoMouseClick;
         public event EventHandler<DroppedPayloadEventArgs>? DroppedPayload;
         public event EventHandler<CursorLocationEventArgs>? CursorLocationChanged;
+        public event EventHandler<TraceEventArgs>? Trace;
         #endregion
 
         #region Fields
+        /// <summary>For differentiating drag from click.</summary>
         Point _dragStart;
-        bool _dragging = false;
+
+        /// <summary>For tracking cursor position inside an ItemDisplay control.</summary>
         CursorLocation _lastCursorLoc = CursorLocation.None;
+
+        /// <summary>Indicates one of the controls is currently dragging.</summary>
+        static bool _dragging = false;
         #endregion
 
         #region Lifecycle
@@ -142,7 +151,7 @@ namespace Ephemera.IconicSelector
         protected override void OnDragEnter(DragEventArgs e)
         {
             DroppedPayloadType tgttype = GetTargetType(e);
-            //TraceLine($"OnDragEnter() index:{index}");
+            TraceLine($"OnDragEnter()");
 
             e.Effect = tgttype switch
             {
@@ -162,6 +171,7 @@ namespace Ephemera.IconicSelector
         {
             var pt = PointToClient(new Point(e.X, e.Y));
             CursorLocation newLoc;
+            //TraceLine($"OnDragOver()");
 
             if (pt.X < (Width / 4))
             {
@@ -192,7 +202,7 @@ namespace Ephemera.IconicSelector
         /// <param name="e"></param>
         protected override void OnDragLeave(EventArgs e)
         {
-            //TraceLine($"OnDragLeave() index:{index}");
+            TraceLine($"OnDragLeave()");
             _lastCursorLoc = CursorLocation.None;
             CursorLocationChanged?.Invoke(this, new(_lastCursorLoc));
 
@@ -208,6 +218,7 @@ namespace Ephemera.IconicSelector
         {
             if (e.Data is null) throw new InvalidOperationException();
             DroppedPayloadType tgttype = GetTargetType(e);
+            TraceLine($"OnDragDrop()");
 
             if (_lastCursorLoc == CursorLocation.Left || _lastCursorLoc == CursorLocation.Right)
             {
@@ -249,35 +260,6 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-        /// <summary>
-        /// Helper function.
-        /// </summary>
-        /// <param name="e"></param>
-        /// <returns></returns>
-        DroppedPayloadType GetTargetType(DragEventArgs e)
-        {
-            DroppedPayloadType ttype = DroppedPayloadType.None;
-
-            if (e.Data is null) throw new InvalidOperationException();
-
-            var dt = e.Data.GetFormats();
-
-            if (dt.Contains("Ephemera.IconicSelector.ItemDisplay"))
-            {
-                ttype = DroppedPayloadType.Item;
-            }
-            else if (dt.Contains(DataFormats.FileDrop))
-            {
-                ttype = DroppedPayloadType.File;
-            }
-            else if (dt.Contains(DataFormats.Html))
-            {
-                ttype = DroppedPayloadType.Url;
-            }
-
-            return ttype;
-        }
-
         #region Mouse events
         /// <summary>
         /// 
@@ -309,7 +291,6 @@ namespace Ephemera.IconicSelector
                 if (!_dragging && (deltaX > SystemInformation.DragSize.Width || deltaY > SystemInformation.DragSize.Height))
                 {
                     _dragging = true;
-                    //StartDragDrop?.Invoke(this, e);
                     DoDragDrop(this, DragDropEffects.Move);
                     handled = true;
                 }
@@ -342,8 +323,7 @@ namespace Ephemera.IconicSelector
         /// <param name="pe"></param>
         protected override void OnPaint(PaintEventArgs pe)
         {
-            //pe.Graphics.Clear(BackColor);
-            pe.Graphics.Clear(Color.LightBlue);
+            pe.Graphics.Clear(BackColor);
 
             // Main content.
             if (!ImageRect.IsEmpty)
@@ -367,6 +347,46 @@ namespace Ephemera.IconicSelector
             }
 
             base.OnPaint(pe);
+        }
+        #endregion
+
+        #region Internals
+        /// <summary>
+        /// Helper function.
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        DroppedPayloadType GetTargetType(DragEventArgs e)
+        {
+            DroppedPayloadType ttype = DroppedPayloadType.None;
+
+            if (e.Data is null) throw new InvalidOperationException();
+
+            var dt = e.Data.GetFormats();
+
+            if (dt.Contains("Ephemera.IconicSelector.ItemDisplay"))
+            {
+                ttype = DroppedPayloadType.Item;
+            }
+            else if (dt.Contains(DataFormats.FileDrop))
+            {
+                ttype = DroppedPayloadType.File;
+            }
+            else if (dt.Contains(DataFormats.Html))
+            {
+                ttype = DroppedPayloadType.Url;
+            }
+
+            return ttype;
+        }
+
+        /// <summary>
+        /// Hello.
+        /// </summary>
+        /// <param name="s"></param>
+        void TraceLine(string s)
+        {
+            Trace?.Invoke(this, new($"DSP [{s}]"));
         }
         #endregion
     }

@@ -18,6 +18,9 @@ namespace Ephemera.IconicSelector.Test
         const int DEF_IMAGE_SIZE = 32;
         Selector? icsel = null;
 
+        Bitmap?[] bmps = [];
+
+
         public TestHost()
         {
             SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
@@ -33,42 +36,6 @@ namespace Ephemera.IconicSelector.Test
                 new("WRN ", Color.Green),
             ];
 
-            if (icsel is not null) Controls.Remove(icsel);
-
-            icsel = new Selector()
-            {
-                AllowDrop = true,
-                AllowExternalDrop = false,
-                AutoScroll = true,
-                BorderStyle = BorderStyle.FixedSingle,
-                DrawFont = new Font("Calibri", 11F, FontStyle.Regular, GraphicsUnit.Point, 0),
-                IndicatorColor = Color.Purple,
-                Location = new Point(12, 22),
-                Size = new Size(184, 453),
-                Spacing = 10,
-                Pad = 8,
-
-                // variable
-                Mode = OpMode.Click,
-                Style = SelectorStyle.Icon,
-                NumColumns = 3,
-                ImageSize = new Size(32, 32),
-
-                //icsel.Mode = OpMode.SingleSelect;
-                //icsel.Mode = OpMode.Click;
-
-                //icsel.Style = SelectorStyle.Tile;
-                //icsel.ImageSize = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-
-                //icsel.Style = SelectorStyle.Fit;
-                //icsel.ImageSize = new(200, 64);
-
-                //icsel.Style = SelectorStyle.Image;
-                //icsel.ImageSize = new(100, 50);
-            };
-
-            Controls.Add(icsel);
-
             // Init the images.
             var srcdir = MiscUtils.GetSourcePath();
 
@@ -81,50 +48,64 @@ namespace Ephemera.IconicSelector.Test
             var defbmp = GraphicsUtils.ExtractIconFromExecutable("shell32.dll", 77, true)!.ToBitmap();
 
             // Add entries to selector. Null forces selector default.
-            Bitmap?[] bmps = [bmp1, bmp2, bmp3, bmp4, defbmp, null];
+            bmps = [bmp1, bmp2, bmp3, bmp4, defbmp, null];
+
+            BuildSelector(SelectorStyle.Icon, OpMode.SingleSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 4);
+
+            //BuildSelector(SelectorStyle.Tile, OpMode.MultiSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 2);
+
+            //BuildSelector(SelectorStyle.Fill, OpMode.Click, new(200, 64), 3);
+
+            //BuildSelector(SelectorStyle.FitWidth, OpMode.Click, new(200, 50), 3);
+
+            //BuildSelector(SelectorStyle.FitHeight, OpMode.Click, new(50, 200), 3);
+
+            base.OnLoad(e);
+        }
+
+        void BuildSelector(SelectorStyle style, OpMode mode, Size imageSize, int numCols)
+        {
+            if (icsel is not null)
+            {
+                Controls.Remove(icsel);
+            }
+
+            icsel = new Selector()
+            {
+                AllowDrop = true,
+                AllowExternalDrop = false,
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                AutoScroll = true,
+                BorderStyle = BorderStyle.FixedSingle,
+                DrawFont = new Font("Calibri", 11F, FontStyle.Regular, GraphicsUnit.Point, 0),
+                IndicatorColor = Color.Purple,
+                Location = new Point(12, 22),
+                Size = new Size(184, 453),
+                Spacing = 10,
+                Pad = 8,
+
+                // variable
+                Mode = mode,
+                Style = style,
+                NumColumns = numCols,
+                ImageSize = imageSize,
+            };
+
             var rand = new Random();
             for (int i = 0; i < 30; i++)
             {
-                var text = $"Item {i} etc etc etc etc";
+                var text = $"Item {i} AAA BBB CCC DDD EEE";
                 icsel.AddItem(text, bmps[rand.Next(0, bmps.Length)], $"fullname{i}");
             }
 
             // Hook up events.
-            icsel.Selection += (sender, e) =>
-            {
-                tvInfo.Append($"Selections ->");
-                e.SelectedItems.ForEach(it => tvInfo.Append($"  [{it}]"));
-            };
+            icsel.Selection += (sender, e) => { e.SelectedItems.ForEach(it => tvInfo.Append($"Selection -> [{it}]")); };
 
-            icsel.Click += (sender, e) =>
-            {
-                tvInfo.Append($"Click -> [{e}]");
-            };
+            icsel.Click += (sender, e) => { tvInfo.Append($"Click -> [{e.ClickedItem}]"); };
 
-            icsel.Trace += (sender, e) =>
-            {
-                if (e.Line.Length > 0)
-                {
-                    tvInfo.Append($"-> [{e.Line}]");
-                }
-                if (e.State.Length > 0)
-                {
-                    var parts = e.State.SplitByToken(" ");
-                    if (!_states.ContainsKey(parts[0]))
-                    {
-                        _states.Add(parts[0], e.State);
-                    }
-                    else
-                    {
-                        _states[parts[0]] = e.State;
-                    }
+            icsel.Trace += (sender, e) => { tvInfo.Append($"-> [{e.Line}]"); };
 
-                    var s = string.Join(Environment.NewLine, _states.Values);
-                    tbState.Text = s;
-                }
-            };
-
-            base.OnLoad(e);
+            Controls.Add(icsel);
         }
 
         async void BtnGo1_Click(object sender, EventArgs e)
@@ -162,45 +143,19 @@ namespace Ephemera.IconicSelector.Test
             icsel.GetAllItems().ForEach(it => tvInfo.Append($">>> {it}"));
         }
 
-
-        /////////////////////////////////////////////////////////////////////
-        ////////////////////// leftovers ////////////////////////////////////
-        /////////////////////////////////////////////////////////////////////
-
-        //// Default image - rainbow.
-        //using PixelBitmap pbmp = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
-        //int incr = 256 / DEF_IMAGE_SIZE;
-        //for (int y = 0; y < DEF_IMAGE_SIZE; y++)
-        //{
-        //    for (int x = 0; x < DEF_IMAGE_SIZE; x++)
-        //    {
-        //        pbmp.SetPixel(x, y, Color.FromArgb(255, x * incr % 256, y * incr % 256, 150));
-        //    }
-        //}
-        //var defbmp = pbmp.GetBitmap();
-
-        /// <summary>Image fitting to ImageSize.</summary>
-        public enum ImageFit
+        void DefImageRainbow()
         {
-            /// <summary>Client is in charge of images</summary>
-            None,
-            /// <summary>Rendered image height from client, width scaled</summary>
-            FitHeight,
-            /// <summary>Rendered image width from client, height scaled</summary>
-            FitWidth,
-            /// <summary>Use all available space</summary>
-            Fill,
-        }
-
-        public Bitmap FitOne(Bitmap bmp, Size sz, ImageFit fit)
-        {
-            // Make a thumbnail scaled to available real estate.
-            float ratio = (float)sz.Height / bmp.Height;
-            int tnWidth = (int)(bmp.Width * ratio);
-            int tnHeight = sz.Height;
-            //var res = bmp.Resize(tnWidth, tnHeight);
-            //return res;
-            return bmp;
+            using PixelBitmap pbmp = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
+            int blue = 128;
+            int incr = 256 / DEF_IMAGE_SIZE;
+            for (int y = 0; y < DEF_IMAGE_SIZE; y++)
+            {
+                for (int x = 0; x < DEF_IMAGE_SIZE; x++)
+                {
+                    pbmp.SetPixel(x, y, Color.FromArgb(255, x * incr % 256, y * incr % 256, blue));
+                }
+            }
+            var defbmp = pbmp.GetBitmap();
         }
     }
 }
