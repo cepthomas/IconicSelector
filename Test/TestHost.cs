@@ -70,7 +70,6 @@ namespace Ephemera.IconicSelector.Test
 
             icsel = new Selector()
             {
-                AllowDrop = true,
                 AllowExternalDrop = true,
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 AutoScroll = true,
