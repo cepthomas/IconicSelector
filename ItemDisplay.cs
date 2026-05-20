@@ -67,7 +67,6 @@ namespace Ephemera.IconicSelector
     }
     #endregion
 
-
     /// <summary>
     /// One selectable item. Differentiates start DragAndDrop from simple click.
     /// </summary>
@@ -124,7 +123,7 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        ///  Clean up any resources being used.
+        /// Clean up any resources being used.
         /// </summary>
         /// <param name="disposing">True if managed resources should be disposed.</param>
         protected override void Dispose(bool disposing)
@@ -151,7 +150,6 @@ namespace Ephemera.IconicSelector
         protected override void OnDragEnter(DragEventArgs e)
         {
             DroppedPayloadType tgttype = GetTargetType(e);
-            TraceLine($"OnDragEnter()");
 
             e.Effect = tgttype switch
             {
@@ -159,6 +157,8 @@ namespace Ephemera.IconicSelector
                 DroppedPayloadType.File or DroppedPayloadType.Url => AllowExternalDrop ? DragDropEffects.Copy : DragDropEffects.None,
                 _ => DragDropEffects.None,// Reject the drop
             };
+
+            TraceLine($"OnDragEnter() {tgttype} {e.Effect}");
 
             base.OnDragEnter(e);
         }
@@ -171,7 +171,6 @@ namespace Ephemera.IconicSelector
         {
             var pt = PointToClient(new Point(e.X, e.Y));
             CursorLocation newLoc;
-            //TraceLine($"OnDragOver()");
 
             if (pt.X < (Width / 4))
             {
@@ -188,6 +187,7 @@ namespace Ephemera.IconicSelector
 
             if (newLoc != _lastCursorLoc)
             {
+                TraceLine($"OnDragOver() CursorLocationChanged new:{newLoc} last:{_lastCursorLoc}");
                 CursorLocationChanged?.Invoke(this, new(newLoc));
             }
 
@@ -218,7 +218,7 @@ namespace Ephemera.IconicSelector
         {
             if (e.Data is null) throw new InvalidOperationException();
             DroppedPayloadType tgttype = GetTargetType(e);
-            TraceLine($"OnDragDrop()");
+            TraceLine($"OnDragDrop() {tgttype}");
 
             if (_lastCursorLoc == CursorLocation.Left || _lastCursorLoc == CursorLocation.Right)
             {
@@ -260,11 +260,11 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-        #region Mouse events
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="e"></param>
+            #region Mouse events
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="e"></param>
         protected override void OnMouseDown(MouseEventArgs e)
         {
             // Record the starting point of the click
@@ -386,7 +386,7 @@ namespace Ephemera.IconicSelector
         /// <param name="s"></param>
         void TraceLine(string s)
         {
-            Trace?.Invoke(this, new($"DSP [{s}]"));
+            Trace?.Invoke(this, new($"DISPLAY {s}"));
         }
         #endregion
     }

@@ -311,17 +311,6 @@
             <param name="ico"></param>
             <param name="fn"></param>
         </member>
-        <member name="M:Ephemera.NBagOfUis.GraphicsUtils.ExtractIconFromExecutable(System.String,System.Int32,System.Boolean)">
-            <summary>
-            Extract the icon from an executable file.
-            Every icon handle (HICON) returned by ExtractIconEx must be released
-            using the DestroyIcon function from user32.dll to prevent memory leaks.
-            </summary>
-            <param name="file"></param>
-            <param name="index"></param>
-            <param name="largeIcon"></param>
-            <returns></returns>
-        </member>
         <member name="M:Ephemera.NBagOfUis.GraphicsUtils.ColorizeControl(System.ComponentModel.Component,System.Drawing.Color)">
             <summary>
             Recolor a control.

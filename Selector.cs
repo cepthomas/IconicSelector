@@ -69,7 +69,7 @@ namespace Ephemera.IconicSelector
     #endregion
 
 
-    /// <summary>Master control API.</summary>
+    /// <summary>API.</summary>
     public partial class Selector : UserControl
     {
         #region Properties
@@ -123,7 +123,7 @@ namespace Ephemera.IconicSelector
         {
             // Init myself.
             SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
-            AllowDrop = true;
+            AllowDrop = false;
             AutoScroll = true;
 
             // Make a default image.
@@ -133,35 +133,6 @@ namespace Ephemera.IconicSelector
             gr.DrawString($"????", Font, Brushes.Black, 2, 2);
         }
         #endregion
-
-
-
-        protected override void OnDragEnter(DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                e.Effect = DragDropEffects.Copy;
-                TraceLine("OnDragEnter");
-            }
-            else
-            {
-                e.Effect = DragDropEffects.None;
-            }
-        }
-
-
-        protected override void OnDragDrop(DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                TraceLine("OnDragDrop");
-            }
-        }
-
-
-
-
 
         #region Functions
         /// <summary>

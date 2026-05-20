@@ -71,7 +71,7 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-        #region Event handlers
+        #region ItemDisplay event handlers
         /// <summary>
         /// Handle cursor change.
         /// </summary>
@@ -80,7 +80,6 @@ namespace Ephemera.IconicSelector
         void Itemd_CursorLocationChanged(object? sender, CursorLocationEventArgs e)
         {
             int index = GetItemIndex(sender);
-            //TraceLine($"Itemd_CursorLocationChange() index:{index} e:{e}");
 
             switch(e.Location)
             {
@@ -150,6 +149,71 @@ namespace Ephemera.IconicSelector
 
             Invalidate(true); // refresh everything
         }
+
+        /// <summary>
+        /// Handle dropped data.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void Itemd_DroppedPayload(object? sender, DroppedPayloadEventArgs e)
+        {
+            int index = GetItemIndex(sender);
+            TraceLine($"Itemd_DroppedPayload() index:{index}e:{e}");
+
+            switch (e.DataType)
+            {
+                case DroppedPayloadType.Item:
+                    var draggedItem = (ItemDisplay)e.Payload;
+                    TraceLine($"Dropped item -> {draggedItem}");
+                    // Insert a copy of the dragged item at the insert index.
+                    Item it = draggedItem.Item;
+                    AddItem(it.Caption, it.Bitmap, it.Value, _insertIndex);
+                    // Remove the original dragged item.
+                    RemoveItem(draggedItem);
+                    break;
+
+                case DroppedPayloadType.File:
+                    var fpath = (string)e.Payload;
+                    TraceLine($"Dropped file -> {fpath}");
+                    var icon = Icon.ExtractAssociatedIcon(fpath);
+                    var fn = Path.GetFileName(fpath);
+                    AddItem(fn, icon?.ToBitmap(), fpath, _insertIndex);
+                    break;
+
+                case DroppedPayloadType.Url:
+                    var fullurl = (string)e.Payload;
+                    var uri = new Uri(fullurl);
+
+                    try
+                    {
+                        // Try to get favicon.
+                        using var httpClient = new HttpClient();
+                        var ss = $"https://www.google.com/s2/favicons?domain={uri.Host}";
+                        // Run async client synchronously. Could be dangerous...
+                        var task = Task.Run(() => httpClient.GetStreamAsync(ss));
+                        task.Wait();
+                        using var img = Image.FromStream(task.Result);
+                        AddItem(uri.Host, new Bitmap(img), fullurl, _insertIndex);
+                    }
+                    catch (HttpRequestException ex)
+                    {
+                        TraceLine($"Favicon request failed - use default {ex.Message}");
+                        AddItem(uri.Host, _defaultImage, fullurl, _insertIndex);
+                    }
+                    catch (Exception)
+                    {
+                        // Client handles.
+                        throw;
+                    }
+                    break;
+
+                default:
+                    throw new InvalidOperationException();
+            }
+
+            _insertIndex = NOT_IN_TARGET;
+            Invalidate(true);
+        }
         #endregion
 
         #region Drawing
@@ -183,73 +247,6 @@ namespace Ephemera.IconicSelector
             }
 
             base.OnPaint(pe);
-        }
-        #endregion
-
-        #region Drag and drop
-        /// <summary>
-        /// Handle dropped data.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void Itemd_DroppedPayload(object? sender, DroppedPayloadEventArgs e)
-        {
-            int index = GetItemIndex(sender);
-            TraceLine($"Itemd_DroppedPayload() index:{index}e:{e}");
-
-            switch (e.DataType)
-            {
-                case DroppedPayloadType.Item:
-                    var draggedItem = (ItemDisplay)e.Payload;
-                    TraceLine($"Dropped item -> [{draggedItem}]");
-                    // Insert a copy of the dragged item at the insert index.
-                    Item it = draggedItem.Item;
-                    AddItem(it.Caption, it.Bitmap, it.Value, _insertIndex);
-                    // Remove the original dragged item.
-                    RemoveItem(draggedItem);
-                    break;
-
-                case DroppedPayloadType.File:
-                    var payload = (string)e.Payload;
-                    TraceLine($"Dropped file -> [{payload}]");
-                    var icon = GraphicsUtils.ExtractIconFromExecutable(payload, 0, true);
-                    var fn = Path.GetFileName(payload);
-                    AddItem(fn, icon?.ToBitmap(), payload, _insertIndex);
-                    break;
-
-                case DroppedPayloadType.Url:
-                    var fullurl = (string)e.Payload;
-                    var uri = new Uri(fullurl);
-
-                    try
-                    {
-                        // Try to get favicon.
-                        using var httpClient = new HttpClient();
-                        var ss = $"https://www.google.com/s2/favicons?domain={uri.Host}";
-                        // Run async client synchronously. Could be dangerous...
-                        var task = Task.Run(() => httpClient.GetStreamAsync(ss));
-                        task.Wait();
-                        using var img = Image.FromStream(task.Result);
-                        AddItem(uri.Host, new Bitmap(img), fullurl, _insertIndex);
-                    }
-                    catch (HttpRequestException ex)
-                    {
-                        TraceLine($"Favicon request failed - use default [{ex.Message}]");
-                        AddItem(uri.Host, _defaultImage, fullurl, _insertIndex);
-                    }
-                    catch (Exception)
-                    {
-                        // Client handles.
-                        throw;
-                    }
-                    break;
-
-                default:
-                    throw new InvalidOperationException();
-            }
-
-            _insertIndex = NOT_IN_TARGET;
-            Invalidate();
         }
         #endregion
 
@@ -396,7 +393,7 @@ namespace Ephemera.IconicSelector
         /// <param name="line"></param>
         void TraceLine(string line)
         {
-            Trace?.Invoke(this, new($"SEL {line}"));
+            Trace?.Invoke(this, new($"SELECTOR {line}"));
         }
         #endregion
     }

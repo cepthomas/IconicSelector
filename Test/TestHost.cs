@@ -17,9 +17,7 @@ namespace Ephemera.IconicSelector.Test
         readonly Dictionary<string, string> _states = [];
         const int DEF_IMAGE_SIZE = 32;
         Selector? icsel = null;
-
         Bitmap?[] bmps = [];
-
 
         public TestHost()
         {
@@ -45,16 +43,16 @@ namespace Ephemera.IconicSelector.Test
             var bmp3 = icon.ToBitmap();
             var bmp4 = new Bitmap(Path.Combine(srcdir, "Files", "color-picker.png"));
             //var defbmp = new Bitmap(Path.Combine(srcdir, "Files", "default.png"));
-            var defbmp = GraphicsUtils.ExtractIconFromExecutable("shell32.dll", 77, true)!.ToBitmap();
+            var defbmp = Icon.ExtractIcon("shell32.dll", 77, false)!.ToBitmap();
 
             // Add entries to selector. Null forces selector default.
             bmps = [bmp1, bmp2, bmp3, bmp4, defbmp, null];
 
-            BuildSelector(SelectorStyle.Icon, OpMode.SingleSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 4);
+            //BuildSelector(SelectorStyle.Icon, OpMode.SingleSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 4);
 
             //BuildSelector(SelectorStyle.Tile, OpMode.MultiSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 2);
 
-            //BuildSelector(SelectorStyle.Fill, OpMode.Click, new(200, 64), 3);
+            BuildSelector(SelectorStyle.Fill, OpMode.Click, new(128, 64), 3);
 
             //BuildSelector(SelectorStyle.FitWidth, OpMode.Click, new(200, 50), 3);
 
@@ -73,7 +71,7 @@ namespace Ephemera.IconicSelector.Test
             icsel = new Selector()
             {
                 AllowDrop = true,
-                AllowExternalDrop = false,
+                AllowExternalDrop = true,
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 AutoScroll = true,
                 BorderStyle = BorderStyle.FixedSingle,
@@ -100,10 +98,8 @@ namespace Ephemera.IconicSelector.Test
 
             // Hook up events.
             icsel.Selection += (sender, e) => { e.SelectedItems.ForEach(it => tvInfo.Append($"Selection -> [{it}]")); };
-
             icsel.Click += (sender, e) => { tvInfo.Append($"Click -> [{e.ClickedItem}]"); };
-
-            icsel.Trace += (sender, e) => { tvInfo.Append($"-> [{e.Line}]"); };
+            icsel.Trace += (sender, e) => { tvInfo.Append($"Trace -> [{e.Line}]"); };
 
             Controls.Add(icsel);
         }
@@ -140,7 +136,7 @@ namespace Ephemera.IconicSelector.Test
 
         void BtnGo2_Click(object sender, EventArgs e)
         {
-            icsel.GetAllItems().ForEach(it => tvInfo.Append($">>> {it}"));
+            icsel?.GetAllItems().ForEach(it => tvInfo.Append($">>> {it}"));
         }
 
         void DefImageRainbow()
