@@ -32,9 +32,6 @@ namespace Ephemera.IconicSelector
         /// <summary>All entries in the collection.</summary>
         readonly List<ItemDisplay> _itemds = [];
 
-        /// <summary>If no valid image available.</summary>
-        Bitmap _defaultImage;
-
         /// <summary>ItemDisplay geometry.</summary>
         Rectangle _itemdImageRect = new();
 
@@ -52,6 +49,15 @@ namespace Ephemera.IconicSelector
 
         /// <summary>Meta index.</summary>
         const int IN_TARGET_CENTER = -2;
+
+        /// <summary>If no valid image available.</summary>
+        readonly Bitmap _defaultImage;
+
+        /// <summary>If no valid image available.</summary>
+        readonly Bitmap _folderImage;
+
+        /// <summary>If no valid image available.</summary>
+        readonly Bitmap _urlImage;
         #endregion
 
         #region Lifecycle
@@ -65,7 +71,9 @@ namespace Ephemera.IconicSelector
             {
                 _itemds.ForEach(itemd => { itemd.Dispose(); });
                 _itemds.Clear();
-                _defaultImage.Dispose();
+                _defaultImage?.Dispose();
+                _folderImage?.Dispose();
+                _urlImage?.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -163,21 +171,52 @@ namespace Ephemera.IconicSelector
             switch (e.DataType)
             {
                 case ItemDataType.Item:
-                    var draggedItem = (ItemDisplay)e.Payload;
-                    TraceLine($"Dropped item -> [{draggedItem}]");
-                    // Insert a copy of the dragged item at the insert index.
-                    Item it = draggedItem.Item;
-                    AddItem(ItemDataType.Item, it.Caption, it.Bitmap, it.Value, _insertIndex);
-                    // Remove the original dragged item.
-                    RemoveItem(draggedItem);
+                    {
+                        var draggedItem = (ItemDisplay)e.Payload;
+                        TraceLine($"Dropped item -> [{draggedItem}]");
+                        // Insert a copy of the dragged item at the insert index.
+                        Item it = draggedItem.Item;
+                        AddItem(ItemDataType.Item, it.Caption, it.Bitmap, it.Value, _insertIndex);
+                        // Remove the original dragged item.
+                        RemoveItem(draggedItem);
+                    }
                     break;
 
                 case ItemDataType.File:
-                    var fpath = (string)e.Payload;
-                    TraceLine($"Dropped file -> [{fpath}]");
-                    var icon = Icon.ExtractAssociatedIcon(fpath);
-                    var fn = Path.GetFileName(fpath);
-                    AddItem(ItemDataType.File, fn, icon?.ToBitmap(), fpath, _insertIndex);
+                    {
+                        var fpath = (string)e.Payload;
+                        var fn = Path.GetFileName(fpath);
+                        TraceLine($"Dropped file -> [{fpath}]");
+
+                        try
+                        {
+                            var bmp = Icon.ExtractAssociatedIcon(fpath)!.ToBitmap();
+                            AddItem(ItemDataType.File, fn, bmp, fpath, _insertIndex);
+                        }
+                        catch (Exception)
+                        {
+                            AddItem(ItemDataType.File, fn, _defaultImage, fpath, _insertIndex);
+                        }
+                    }
+                    break;
+
+                case ItemDataType.Dir:
+                    {
+                        var dpath = (string)e.Payload;
+                        //var dn = Directory.GetDirectoryRoot(dpath);
+                        var dn = Path.GetFileName(dpath);
+                        TraceLine($"Dropped dir -> [{dpath}]");
+
+                        try
+                        {
+                            var bmp = Icon.ExtractAssociatedIcon(dpath)!.ToBitmap();
+                            AddItem(ItemDataType.File, dn, bmp, dpath, _insertIndex);
+                        }
+                        catch (Exception)
+                        {
+                            AddItem(ItemDataType.File, dn, _folderImage, dpath, _insertIndex);
+                        }
+                    }
                     break;
 
                 case ItemDataType.Url:
@@ -198,7 +237,7 @@ namespace Ephemera.IconicSelector
                     catch (HttpRequestException ex)
                     {
                         TraceLine($"Favicon request failed - using default: {ex.Message}");
-                        AddItem(ItemDataType.Url, uri.Host, _defaultImage, fullurl, _insertIndex);
+                        AddItem(ItemDataType.Url, uri.Host, _urlImage, fullurl, _insertIndex);
                     }
                     catch (Exception)
                     {

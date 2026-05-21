@@ -17,7 +17,7 @@ namespace Ephemera.IconicSelector.Test
         readonly Dictionary<string, string> _states = [];
         const int DEF_IMAGE_SIZE = 32;
         Selector? icsel = null;
-        Bitmap?[] bmps = [];
+        Bitmap[] bmps = [];
 
         public TestHost()
         {
@@ -46,15 +46,15 @@ namespace Ephemera.IconicSelector.Test
             var defbmp = Icon.ExtractIcon("shell32.dll", 77, false)!.ToBitmap();
 
             // Add entries to selector. Null forces selector default.
-            bmps = [bmp1, bmp2, bmp3, bmp4, defbmp, null];
+            bmps = [bmp1, bmp2, bmp3, bmp4, defbmp];
 
             //BuildSelector(SelectorStyle.Icon, OpMode.SingleSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 4);
 
-            //BuildSelector(SelectorStyle.Tile, OpMode.MultiSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 2);
+            BuildSelector(SelectorStyle.Tile, OpMode.Click, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 2);
 
-            BuildSelector(SelectorStyle.Fill, OpMode.Click, new(128, 64), 3);
+            //BuildSelector(SelectorStyle.Fill, OpMode.Click, new(128, 64), 3);
 
-            //BuildSelector(SelectorStyle.FitWidth, OpMode.Click, new(200, 50), 3);
+            //BuildSelector(SelectorStyle.FitWidth, OpMode.MultiSelect, new(200, 50), 3);
 
             //BuildSelector(SelectorStyle.FitHeight, OpMode.Click, new(50, 200), 3);
 
@@ -70,7 +70,7 @@ namespace Ephemera.IconicSelector.Test
 
             icsel = new Selector()
             {
-                AllowExternalDrop = true,
+                AllowExternalSource = true,
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 AutoScroll = true,
                 BorderStyle = BorderStyle.FixedSingle,
@@ -91,7 +91,7 @@ namespace Ephemera.IconicSelector.Test
             for (int i = 0; i < 30; i++)
             {
                 var text = $"Item {i} AAA BBB CCC DDD EEE";
-                icsel.AddItem(ItemDataType.File, text, bmps[rand.Next(0, bmps.Length)], $"fullname{i}");
+                icsel.AddItem(ItemDataType.None, text, bmps[rand.Next(0, bmps.Length)], $"fullname{i}");
             }
 
             // Hook up events.
@@ -148,6 +148,12 @@ namespace Ephemera.IconicSelector.Test
                 }
             }
             var defbmp = pbmp.GetBitmap();
+
+            //// Big X
+            //_defaultImage = new(32, 32);
+            //using Graphics gr = Graphics.FromImage(_defaultImage);
+            //gr.Clear(Color.LightSalmon);
+            //gr.DrawString($"????", Font, Brushes.Black, 2, 2);
         }
     }
 }

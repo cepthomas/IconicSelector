@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using Ephemera.NBagOfTricks;
@@ -20,7 +21,7 @@ namespace Ephemera.IconicSelector
         /// <summary>The payload type</summary>
         public ItemDataType DataType { get; init; } = dtype;
 
-        /// <summary>The target</summary>
+        /// <summary>The drag source</summary>
         public object Payload { get; init; } = payload;
 
         /// <summary>Read me.</summary>
@@ -57,8 +58,8 @@ namespace Ephemera.IconicSelector
         /// <summary></summary>
         public bool Selected = false;
 
-        /// <summary></summary>
-        public bool AllowExternalDrop = false;
+        /// <summary>Allow drag and drop frome external sources - file/folder/url only.</summary>
+        public bool AllowExternalSource { get; set; } = false;
 
         /// <summary>Geometry.</summary>
         public Rectangle ImageRect { get; init; } = new();
@@ -120,21 +121,34 @@ namespace Ephemera.IconicSelector
 
         #region Drag and drop        
         /// <summary>
-        /// Sets the target drop effect.
+        /// Sets the drop effect.
         /// </summary>
         /// <param name="e"></param>
         protected override void OnDragEnter(DragEventArgs e)
         {
-            ItemDataType tgttype = GetTargetType(e);
-
-            e.Effect = tgttype switch
+            if (e.Data is not null)
             {
-                ItemDataType.Item => DragDropEffects.Move,
-                ItemDataType.File or ItemDataType.Url => AllowExternalDrop ? DragDropEffects.Copy : DragDropEffects.None,
-                _ => DragDropEffects.None,// Reject the drop
-            };
+                var formats = e.Data.GetFormats();
 
-            TraceLine($"OnDragEnter() tgttype:{tgttype} e.Effect:{e.Effect}");
+                if (formats.Contains(typeof(ItemDisplay).ToString()))
+                {
+                    e.Effect = DragDropEffects.Move;
+                }
+                else if (formats.Contains(DataFormats.FileDrop))
+                {
+                    e.Effect = AllowExternalSource ? DragDropEffects.Copy : DragDropEffects.None;
+                }
+                else if (formats.Contains(DataFormats.Html))
+                {
+                    e.Effect = AllowExternalSource ? DragDropEffects.Copy : DragDropEffects.None;
+                }
+                else
+                {
+                    e.Effect = DragDropEffects.None; // reject
+                }
+
+                TraceLine($"OnDragEnter() e.Effect:{e.Effect}");
+            }
 
             base.OnDragEnter(e);
         }
@@ -184,51 +198,57 @@ namespace Ephemera.IconicSelector
         protected override void OnDragDrop(DragEventArgs e)
         {
             if (e.Data is null) throw new InvalidOperationException();
-            ItemDataType tgttype = GetTargetType(e);
-            TraceLine($"OnDragDrop() tgttype:{tgttype}");
+            // ItemDataType dtype = GetDataType(e);
+            //   TraceLine($"OnDragDrop() dtype:{dtype}");
 
-            if (_lastCursorLoc == CursorLocation.Left || _lastCursorLoc == CursorLocation.Right)
+            if (_lastCursorLoc == CursorLocation.None || _lastCursorLoc == CursorLocation.Center) return;
+
+
+            var formats = e.Data.GetFormats();
+            if (formats.Contains(typeof(ItemDisplay).ToString()))
             {
-                switch (tgttype) // these should be handled by client??
+                var idata = e.Data.GetData(typeof(ItemDisplay));
+                if (idata is not null)
                 {
-                    case ItemDataType.Item:
-                        var idata = e.Data.GetData(typeof(ItemDisplay));
-                        if (idata is not null)
+                    var src = (ItemDisplay)idata;
+                    DroppedPayload?.Invoke(this, new(ItemDataType.Item, src));
+                }
+            }
+            else if (formats.Contains(DataFormats.FileDrop))
+            {
+                var fdata = e.Data.GetData(DataFormats.FileDrop);
+                if (fdata is not null)
+                {
+                    var d = (string[])fdata;
+                    d.ForEach(path =>
+                    {
+                        if (File.Exists(path))
                         {
-                            var src = (ItemDisplay)idata;
-                            DroppedPayload?.Invoke(this, new(ItemDataType.Item, src));
+                            DroppedPayload?.Invoke(this, new(ItemDataType.File, path));
                         }
-                        break;
-
-                    case ItemDataType.File:
-                        var fdata = e.Data.GetData(DataFormats.FileDrop);
-                        if (fdata is not null)
+                        else if (Directory.Exists(path))
                         {
-                            var d = (string[])fdata;
-                            d.ForEach(fn => DroppedPayload?.Invoke(this, new(ItemDataType.File, fn)));
+                            DroppedPayload?.Invoke(this, new(ItemDataType.Dir, path));
                         }
-                        break;
-
-                    case ItemDataType.Url:
-                        var hdata = e.Data.GetData(DataFormats.Html);
-                        if (hdata is not null)
-                        {
-                            var s = (string)hdata;
-                            var parts = s.SplitByToken(Environment.NewLine);
-                            parts.Where(p => p.Contains("<!--StartFragment")).ForEach(p =>
-                            {
-                                //<!--StartFragment--><A HREF="https://www.aaa.com/watch?what">Title</A>
-                                int start = p.IndexOf("http");
-                                int end = p.IndexOf("\">", start);
-                                var fullurl = p[start..end];
-                                DroppedPayload?.Invoke(this, new(ItemDataType.Url, fullurl));
-                            });
-                        }
-                        break;
-
-                    default:
-                        // ignore
-                        break;
+                        // else TODO1???
+                    });
+                }
+            }
+            else if (formats.Contains(DataFormats.Html))
+            {
+                var hdata = e.Data.GetData(DataFormats.Html);
+                if (hdata is not null)
+                {
+                    var s = (string)hdata;
+                    var parts = s.SplitByToken(Environment.NewLine);
+                    parts.Where(p => p.Contains("<!--StartFragment")).ForEach(p =>
+                    {
+                        //<!--StartFragment--><A HREF="https://www.aaa.com/watch?what">Title</A>
+                        int start = p.IndexOf("http");
+                        int end = p.IndexOf("\">", start);
+                        var fullurl = p[start..end];
+                        DroppedPayload?.Invoke(this, new(ItemDataType.Url, fullurl));
+                    });
                 }
             }
 
@@ -304,7 +324,16 @@ namespace Ephemera.IconicSelector
             // Main content.
             if (!ImageRect.IsEmpty)
             {
-                pe.Graphics.DrawImage(Item.Bitmap, ImageRect);
+                if (Item.Bitmap != null)
+                {
+                    pe.Graphics.DrawImage(Item.Bitmap, ImageRect);
+                }
+                else
+                {
+                    Rectangle rect = ClientRectangle;
+                    rect.Inflate(-10, -10);
+                    pe.Graphics.FillRectangle(Brushes.Crimson, rect);
+                }
             }
 
             if (!TextRect.IsEmpty)
@@ -327,34 +356,6 @@ namespace Ephemera.IconicSelector
         #endregion
 
         #region Internals
-        /// <summary>
-        /// Helper function.
-        /// </summary>
-        /// <param name="e"></param>
-        /// <returns></returns>
-        ItemDataType GetTargetType(DragEventArgs e)
-        {
-            ItemDataType ttype = ItemDataType.None;
-
-            if (e.Data is null) throw new InvalidOperationException();
-
-            var formats = e.Data.GetFormats();
-            if (formats.Contains(typeof(ItemDisplay).ToString()))
-            {
-                ttype = ItemDataType.Item;
-            }
-            else if (formats.Contains(DataFormats.FileDrop))
-            {
-                ttype = ItemDataType.File;
-            }
-            else if (formats.Contains(DataFormats.Html))
-            {
-                ttype = ItemDataType.Url;
-            }
-
-            return ttype;
-        }
-
         /// <summary>
         /// Hello.
         /// </summary>

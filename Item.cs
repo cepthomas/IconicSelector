@@ -6,7 +6,7 @@ using System.Drawing;
 namespace Ephemera.IconicSelector
 {
     /// <summary>Drag and drop payload data.</summary>
-    public enum ItemDataType { None, Item, File, Url }
+    public enum ItemDataType { None, Item, File, Dir, Url }
 
     /// <summary>Describes one item in the collection. Part of API.</summary>
     public class Item : IDisposable
@@ -44,13 +44,13 @@ namespace Ephemera.IconicSelector
         /// <summary>Clean up</summary>
         public void Dispose()
         {
-            Bitmap.Dispose();
+            Bitmap?.Dispose();
         }
 
         /// <summary>Read me</summary>
         public override string ToString()
         {
-            return $"dtype:{DataType} caption:{Caption} bmp:{Bitmap?.Size} value:{Value}";
+            return $"dtype:{DataType} caption:{Caption} bmp:{Bitmap.Size} value:{Value}";
         }
     }
 }

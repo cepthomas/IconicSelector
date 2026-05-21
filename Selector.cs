@@ -73,17 +73,14 @@ namespace Ephemera.IconicSelector
         /// <summary>What the mouse click does.</summary>
         public OpMode Mode { get; set; } = OpMode.Click;
 
-        /// <summary>Allow drag and drop (files) from other applications.</summary>
-        public bool AllowExternalDrop { get; set; } = false;
+        /// <summary>Allow drag and drop frome external sources - file/folder/url only.</summary>
+        public bool AllowExternalSource { get; set; } = false;
 
         /// <summary>Cosmetics.</summary>
         public Font DrawFont { get; set; } = new("Calibri", 11, FontStyle.Regular, GraphicsUnit.Point, 0);
 
         /// <summary>Cosmetics.</summary>
         public Color IndicatorColor { get; set; } = Color.Purple;
-
-        /// <summary>If no valid image available.</summary>
-        public Bitmap DefaultImage  { set { _defaultImage = value; } }
 
         /// <summary>Visual space at edges.</summary>
         public int Pad { get; set; } = 4;
@@ -108,11 +105,10 @@ namespace Ephemera.IconicSelector
             AllowDrop = false;
             AutoScroll = true;
 
-            // Make a default image, may be overwritten by client.
-            _defaultImage = new(32, 32);
-            using Graphics gr = Graphics.FromImage(_defaultImage);
-            gr.Clear(Color.LightSalmon);
-            gr.DrawString($"????", Font, Brushes.Black, 2, 2);
+            // Make default images.
+            _folderImage = Icon.ExtractIcon("shell32.dll", 3, false)!.ToBitmap();
+            _urlImage = Icon.ExtractIcon("shell32.dll", 13, false)!.ToBitmap();
+            _defaultImage = Icon.ExtractIcon("shell32.dll", 23, false)!.ToBitmap();
         }
         #endregion
 
@@ -125,10 +121,10 @@ namespace Ephemera.IconicSelector
         /// <param name="bmp">Bitmap</param>
         /// <param name="value">Meaningful for client use</param>
         /// <param name="index">Where to insert, -1 is append</param>
-        public void AddItem(ItemDataType dtype, string caption, Bitmap? bmp, object value, int index = -1)
+        public void AddItem(ItemDataType dtype, string caption, Bitmap bmp, object value, int index = -1)
         {
             // Make a new item. Maybe adjust the image.
-            bmp ??= _defaultImage;
+           // bmp ??= _defaultImage;
 
             switch (Style)
             {
@@ -191,7 +187,7 @@ namespace Ephemera.IconicSelector
                 ImageRect = _itemdImageRect,
                 TextRect = _itemdTextRect,
                 Size = _itemdSize,
-                AllowExternalDrop = AllowExternalDrop,
+                AllowExternalSource = AllowExternalSource,
             };
             itemd.DoMouseClick += Itemd_DoMouseClick;
             itemd.DroppedPayload += Itemd_DroppedPayload;
@@ -234,20 +230,6 @@ namespace Ephemera.IconicSelector
             _itemds.Where(itemd => itemd.Selected).ForEach(itemd => { res.Add(itemd.Item); });
             return res;
         }
-
-        ///// <summary>
-        ///// Item management.
-        ///// </summary>
-        //public void RemoveItem(int index) or Item item?
-        //{
-        //    if (index >= 0 && index < _itemds.Count)
-        //    {
-        //        var _itemd = _itemds[index];
-        //        RemoveItem(_itemd);
-        //    }
-        //    UpdateItemsList();
-        //    Invalidate(true);
-        //}
         #endregion
     }
 }
