@@ -1,4 +1,4 @@
-﻿    using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -46,25 +46,13 @@ namespace Ephemera.IconicSelector
         Click,
     }
 
-    /// <summary>User clicked item.</summary>
-    public class ClickEventArgs(Item item) : EventArgs
+    /// <summary>
+    /// User clicked. If item is not null it's a simple click: OpMode is Click.
+    /// Else it's a notification that selection(s) changed: OpMode is *Select.
+    /// </summary>
+    public class ClickEventArgs(Item? item) : EventArgs
     {
-        /// <summary>The item</summary>
-        public Item ClickedItem { get; init; } = item;
-    }
-
-    /// <summary>User selection(s) have changed.</summary>
-    public class SelectionEventArgs(List<Item> items) : EventArgs
-    {
-        /// <summary>The selection(s)</summary>
-        public List<Item> SelectedItems { get; init; } = items;
-    }
-
-    /// <summary>Debugging.</summary>
-    public class TraceEventArgs(string line) : EventArgs
-    {
-        /// <summary>Log line.</summary>
-        public string Line { get; set; } = line;
+        public Item? ClickedItem { get; init; } = item;
     }
     #endregion
 
@@ -107,12 +95,6 @@ namespace Ephemera.IconicSelector
         #region Events
         /// <summary>Tell client that item was clicked - OpMode = Click.</summary>
         public new event EventHandler<ClickEventArgs>? Click;
-
-        /// <summary>Tell client that selection(s) have changed - OpMode = *Select.</summary>
-        public event EventHandler<SelectionEventArgs>? Selection;
-
-        /// <summary>Debug hook - something permanent?</summary>
-        public event EventHandler<TraceEventArgs>? Trace;
         #endregion
 
         #region Lifecycle
@@ -126,7 +108,7 @@ namespace Ephemera.IconicSelector
             AllowDrop = false;
             AutoScroll = true;
 
-            // Make a default image.
+            // Make a default image, may be overwritten by client.
             _defaultImage = new(32, 32);
             using Graphics gr = Graphics.FromImage(_defaultImage);
             gr.Clear(Color.LightSalmon);
@@ -138,11 +120,12 @@ namespace Ephemera.IconicSelector
         /// <summary>
         /// Add a new item.
         /// </summary>
+        /// <param name="dtype">The value type</param>
         /// <param name="caption">For display below/next to image</param>
         /// <param name="bmp">Bitmap</param>
         /// <param name="value">Meaningful for client use</param>
         /// <param name="index">Where to insert, -1 is append</param>
-        public void AddItem(string caption, Bitmap? bmp, object value, int index = -1)
+        public void AddItem(ItemDataType dtype, string caption, Bitmap? bmp, object value, int index = -1)
         {
             // Make a new item. Maybe adjust the image.
             bmp ??= _defaultImage;
@@ -200,7 +183,7 @@ namespace Ephemera.IconicSelector
                     break;
             }
 
-            Item item = new(caption, bmp, value);
+            Item item = new(dtype, caption, bmp, value);
 
             ItemDisplay itemd = new(item)
             {
@@ -213,7 +196,6 @@ namespace Ephemera.IconicSelector
             itemd.DoMouseClick += Itemd_DoMouseClick;
             itemd.DroppedPayload += Itemd_DroppedPayload;
             itemd.CursorLocationChanged += Itemd_CursorLocationChanged;
-            itemd.Trace += (object? sender, TraceEventArgs e) => Trace?.Invoke(sender, e);
 
             Controls.Add(itemd);
 
@@ -241,6 +223,31 @@ namespace Ephemera.IconicSelector
             _itemds.ForEach(itemd => res.Add(itemd.Item));
             return res;
         }
+
+        /// <summary>
+        /// Get selected items.
+        /// </summary>
+        /// <returns>Items.</returns>
+        public List<Item> GetSelectedItems()
+        {
+            List<Item> res = [];
+            _itemds.Where(itemd => itemd.Selected).ForEach(itemd => { res.Add(itemd.Item); });
+            return res;
+        }
+
+        ///// <summary>
+        ///// Item management.
+        ///// </summary>
+        //public void RemoveItem(int index) or Item item?
+        //{
+        //    if (index >= 0 && index < _itemds.Count)
+        //    {
+        //        var _itemd = _itemds[index];
+        //        RemoveItem(_itemd);
+        //    }
+        //    UpdateItemsList();
+        //    Invalidate(true);
+        //}
         #endregion
     }
 }

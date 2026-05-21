@@ -125,7 +125,7 @@ namespace Ephemera.IconicSelector
                     if (sel)
                     {
                         itemd.Selected = false;
-                        Selection?.Invoke(this, new([])); // no select
+                        Click?.Invoke(this, new(null));
                     }
                     else
                     {
@@ -133,13 +133,13 @@ namespace Ephemera.IconicSelector
                         _itemds.ForEach(itemd => itemd.Selected = false);
                         // Select this one.
                         itemd.Selected = true;
-                        Selection?.Invoke(this, new([itemd.Item]));
+                        Click?.Invoke(this, new(null));
                     }
                     break;
 
                 case (MouseButtons.Left, OpMode.MultiSelect):
                     itemd.Selected = !sel;
-                    Selection?.Invoke(this, new([.. _itemds.Where(itemd => itemd.Selected).Select(itemd => itemd.Item)]));
+                    Click?.Invoke(this, new(null));
                     break;
 
                 case (_, _):
@@ -158,29 +158,29 @@ namespace Ephemera.IconicSelector
         void Itemd_DroppedPayload(object? sender, DroppedPayloadEventArgs e)
         {
             int index = GetItemIndex(sender);
-            TraceLine($"Itemd_DroppedPayload() index:{index}e:{e}");
+            TraceLine($"Itemd_DroppedPayload() index:{index} e:{e}");
 
             switch (e.DataType)
             {
-                case DroppedPayloadType.Item:
+                case ItemDataType.Item:
                     var draggedItem = (ItemDisplay)e.Payload;
-                    TraceLine($"Dropped item -> {draggedItem}");
+                    TraceLine($"Dropped item -> [{draggedItem}]");
                     // Insert a copy of the dragged item at the insert index.
                     Item it = draggedItem.Item;
-                    AddItem(it.Caption, it.Bitmap, it.Value, _insertIndex);
+                    AddItem(ItemDataType.Item, it.Caption, it.Bitmap, it.Value, _insertIndex);
                     // Remove the original dragged item.
                     RemoveItem(draggedItem);
                     break;
 
-                case DroppedPayloadType.File:
+                case ItemDataType.File:
                     var fpath = (string)e.Payload;
-                    TraceLine($"Dropped file -> {fpath}");
+                    TraceLine($"Dropped file -> [{fpath}]");
                     var icon = Icon.ExtractAssociatedIcon(fpath);
                     var fn = Path.GetFileName(fpath);
-                    AddItem(fn, icon?.ToBitmap(), fpath, _insertIndex);
+                    AddItem(ItemDataType.File, fn, icon?.ToBitmap(), fpath, _insertIndex);
                     break;
 
-                case DroppedPayloadType.Url:
+                case ItemDataType.Url:
                     var fullurl = (string)e.Payload;
                     var uri = new Uri(fullurl);
 
@@ -193,12 +193,12 @@ namespace Ephemera.IconicSelector
                         var task = Task.Run(() => httpClient.GetStreamAsync(ss));
                         task.Wait();
                         using var img = Image.FromStream(task.Result);
-                        AddItem(uri.Host, new Bitmap(img), fullurl, _insertIndex);
+                        AddItem(ItemDataType.Url, uri.Host, new Bitmap(img), fullurl, _insertIndex);
                     }
                     catch (HttpRequestException ex)
                     {
-                        TraceLine($"Favicon request failed - use default {ex.Message}");
-                        AddItem(uri.Host, _defaultImage, fullurl, _insertIndex);
+                        TraceLine($"Favicon request failed - using default: {ex.Message}");
+                        AddItem(ItemDataType.Url, uri.Host, _defaultImage, fullurl, _insertIndex);
                     }
                     catch (Exception)
                     {
@@ -368,7 +368,6 @@ namespace Ephemera.IconicSelector
         {
             ArgumentNullException.ThrowIfNull(item);
             if (item.GetType() != typeof(ItemDisplay)) throw new ArgumentException("Invalid type");
-
             var itemd = (ItemDisplay)item;
             return itemd;
         }
@@ -388,12 +387,12 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// 
+        /// Debug.
         /// </summary>
         /// <param name="line"></param>
         void TraceLine(string line)
         {
-            Trace?.Invoke(this, new($"SELECTOR {line}"));
+            Console.WriteLine($"SELECTOR {line}");
         }
         #endregion
     }

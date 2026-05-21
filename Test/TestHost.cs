@@ -80,7 +80,6 @@ namespace Ephemera.IconicSelector.Test
                 Size = new Size(184, 453),
                 Spacing = 10,
                 Pad = 8,
-
                 // variable
                 Mode = mode,
                 Style = style,
@@ -92,13 +91,11 @@ namespace Ephemera.IconicSelector.Test
             for (int i = 0; i < 30; i++)
             {
                 var text = $"Item {i} AAA BBB CCC DDD EEE";
-                icsel.AddItem(text, bmps[rand.Next(0, bmps.Length)], $"fullname{i}");
+                icsel.AddItem(ItemDataType.File, text, bmps[rand.Next(0, bmps.Length)], $"fullname{i}");
             }
 
             // Hook up events.
-            icsel.Selection += (sender, e) => { e.SelectedItems.ForEach(it => tvInfo.Append($"Selection -> [{it}]")); };
             icsel.Click += (sender, e) => { tvInfo.Append($"Click -> [{e.ClickedItem}]"); };
-            icsel.Trace += (sender, e) => { tvInfo.Append($"Trace -> [{e.Line}]"); };
 
             Controls.Add(icsel);
         }

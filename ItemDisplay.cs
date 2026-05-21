@@ -11,37 +11,14 @@ using Ephemera.NBagOfTricks;
 namespace Ephemera.IconicSelector
 {
     #region Types
-    /// <summary>Drag and drop payload data.</summary>
-    internal enum DroppedPayloadType
-    {
-        /// <summary>Default</summary>
-        None,
-        /// <summary>File name</summary>
-        File,
-        /// <summary>URL</summary>
-        Url,
-        /// <summary>Internal - DisplayItem</summary>
-        Item
-    }
-
     /// <summary>Where the cursor is in ItemDisplay.</summary>
-    internal enum CursorLocation
-    {
-        /// <summary>Default</summary>
-        None,
-        /// <summary></summary>
-        Left,
-        /// <summary></summary>
-        Right,
-        /// <summary></summary>
-        Center
-    }
+    internal enum CursorLocation { None, Left, Right, Center }
 
     /// <summary>User drag-dropped something from elsewhere.</summary>
-    internal class DroppedPayloadEventArgs(DroppedPayloadType tgttype, object payload) : EventArgs
+    internal class DroppedPayloadEventArgs(ItemDataType dtype, object payload) : EventArgs
     {
         /// <summary>The payload type</summary>
-        public DroppedPayloadType DataType { get; init; } = tgttype;
+        public ItemDataType DataType { get; init; } = dtype;
 
         /// <summary>The target</summary>
         public object Payload { get; init; } = payload;
@@ -49,7 +26,7 @@ namespace Ephemera.IconicSelector
         /// <summary>Read me.</summary>
         public override string ToString()
         {
-            return $"{DataType} [{Payload}]";
+            return $"DataType:{DataType} Payload:[{Payload}]";
         }
     }
 
@@ -62,7 +39,7 @@ namespace Ephemera.IconicSelector
         /// <summary>Read me.</summary>
         public override string ToString()
         {
-            return $"{Location} [{Location}]";
+            return $"Location:{Location}";
         }
     }
     #endregion
@@ -97,7 +74,6 @@ namespace Ephemera.IconicSelector
         public event EventHandler<MouseEventArgs>? DoMouseClick;
         public event EventHandler<DroppedPayloadEventArgs>? DroppedPayload;
         public event EventHandler<CursorLocationEventArgs>? CursorLocationChanged;
-        public event EventHandler<TraceEventArgs>? Trace;
         #endregion
 
         #region Fields
@@ -138,7 +114,7 @@ namespace Ephemera.IconicSelector
         /// <summary>Read me</summary>
         public override string ToString()
         {
-            return $"Item:{Item} Location:{ Location} Selected:{Selected}";
+            return $"Item:{Item} Location:{Location} Selected:{Selected}";
         }
         #endregion
 
@@ -149,16 +125,16 @@ namespace Ephemera.IconicSelector
         /// <param name="e"></param>
         protected override void OnDragEnter(DragEventArgs e)
         {
-            DroppedPayloadType tgttype = GetTargetType(e);
+            ItemDataType tgttype = GetTargetType(e);
 
             e.Effect = tgttype switch
             {
-                DroppedPayloadType.Item => DragDropEffects.Move,
-                DroppedPayloadType.File or DroppedPayloadType.Url => AllowExternalDrop ? DragDropEffects.Copy : DragDropEffects.None,
+                ItemDataType.Item => DragDropEffects.Move,
+                ItemDataType.File or ItemDataType.Url => AllowExternalDrop ? DragDropEffects.Copy : DragDropEffects.None,
                 _ => DragDropEffects.None,// Reject the drop
             };
 
-            TraceLine($"OnDragEnter() {tgttype} {e.Effect}");
+            TraceLine($"OnDragEnter() tgttype:{tgttype} e.Effect:{e.Effect}");
 
             base.OnDragEnter(e);
         }
@@ -172,18 +148,9 @@ namespace Ephemera.IconicSelector
             var pt = PointToClient(new Point(e.X, e.Y));
             CursorLocation newLoc;
 
-            if (pt.X < (Width / 4))
-            {
-                newLoc = CursorLocation.Left;
-            }
-            else if (pt.X > (Width * 3 / 4))
-            {
-                newLoc = CursorLocation.Right;
-            }
-            else
-            {
-                newLoc = CursorLocation.Center;
-            }
+            if (pt.X < (Width / 4)) { newLoc = CursorLocation.Left; }
+            else if (pt.X > (Width * 3 / 4)) { newLoc = CursorLocation.Right; }
+            else { newLoc = CursorLocation.Center; }
 
             if (newLoc != _lastCursorLoc)
             {
@@ -217,42 +184,51 @@ namespace Ephemera.IconicSelector
         protected override void OnDragDrop(DragEventArgs e)
         {
             if (e.Data is null) throw new InvalidOperationException();
-            DroppedPayloadType tgttype = GetTargetType(e);
-            TraceLine($"OnDragDrop() {tgttype}");
+            ItemDataType tgttype = GetTargetType(e);
+            TraceLine($"OnDragDrop() tgttype:{tgttype}");
 
             if (_lastCursorLoc == CursorLocation.Left || _lastCursorLoc == CursorLocation.Right)
             {
-                switch (tgttype)
+                switch (tgttype) // these should be handled by client??
                 {
-                    case DroppedPayloadType.Item:
-                        var data = e.Data.GetData(typeof(ItemDisplay));
-                        var src = (ItemDisplay)data!;
-                        DroppedPayload?.Invoke(this, new(DroppedPayloadType.Item, src));
-                        break;
-
-                    case DroppedPayloadType.File:
-                        var fdata = (string[]?)e.Data.GetData(DataFormats.FileDrop) ?? [];
-                        fdata.ForEach(fn => DroppedPayload?.Invoke(this, new(DroppedPayloadType.File, fn)));
-                        break;
-
-                    case DroppedPayloadType.Url:
-                        var hdata = e.Data.GetData(DataFormats.Html);
-
-                        var s = hdata as string ?? "";
-                        var parts = s.SplitByToken(Environment.NewLine);
-
-                        parts.Where(p => p.Contains("<!--StartFragment")).ForEach(p =>
+                    case ItemDataType.Item:
+                        var idata = e.Data.GetData(typeof(ItemDisplay));
+                        if (idata is not null)
                         {
-                            //<!--StartFragment--><A HREF="https://www.aaa.com/watch?what">Title</A>
-                            int start = p.IndexOf("http");
-                            int end = p.IndexOf("\">", start);
-                            var fullurl = p[start..end];
-                            DroppedPayload?.Invoke(this, new(DroppedPayloadType.Url, fullurl));
-                        });
+                            var src = (ItemDisplay)idata;
+                            DroppedPayload?.Invoke(this, new(ItemDataType.Item, src));
+                        }
+                        break;
+
+                    case ItemDataType.File:
+                        var fdata = e.Data.GetData(DataFormats.FileDrop);
+                        if (fdata is not null)
+                        {
+                            var d = (string[])fdata;
+                            d.ForEach(fn => DroppedPayload?.Invoke(this, new(ItemDataType.File, fn)));
+                        }
+                        break;
+
+                    case ItemDataType.Url:
+                        var hdata = e.Data.GetData(DataFormats.Html);
+                        if (hdata is not null)
+                        {
+                            var s = (string)hdata;
+                            var parts = s.SplitByToken(Environment.NewLine);
+                            parts.Where(p => p.Contains("<!--StartFragment")).ForEach(p =>
+                            {
+                                //<!--StartFragment--><A HREF="https://www.aaa.com/watch?what">Title</A>
+                                int start = p.IndexOf("http");
+                                int end = p.IndexOf("\">", start);
+                                var fullurl = p[start..end];
+                                DroppedPayload?.Invoke(this, new(ItemDataType.Url, fullurl));
+                            });
+                        }
                         break;
 
                     default:
-                        throw new InvalidOperationException();
+                        // ignore
+                        break;
                 }
             }
 
@@ -260,11 +236,11 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-            #region Mouse events
-            /// <summary>
-            /// 
-            /// </summary>
-            /// <param name="e"></param>
+        #region Mouse events
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnMouseDown(MouseEventArgs e)
         {
             // Record the starting point of the click
@@ -356,25 +332,24 @@ namespace Ephemera.IconicSelector
         /// </summary>
         /// <param name="e"></param>
         /// <returns></returns>
-        DroppedPayloadType GetTargetType(DragEventArgs e)
+        ItemDataType GetTargetType(DragEventArgs e)
         {
-            DroppedPayloadType ttype = DroppedPayloadType.None;
+            ItemDataType ttype = ItemDataType.None;
 
             if (e.Data is null) throw new InvalidOperationException();
 
-            var dt = e.Data.GetFormats();
-
-            if (dt.Contains("Ephemera.IconicSelector.ItemDisplay"))
+            var formats = e.Data.GetFormats();
+            if (formats.Contains(typeof(ItemDisplay).ToString()))
             {
-                ttype = DroppedPayloadType.Item;
+                ttype = ItemDataType.Item;
             }
-            else if (dt.Contains(DataFormats.FileDrop))
+            else if (formats.Contains(DataFormats.FileDrop))
             {
-                ttype = DroppedPayloadType.File;
+                ttype = ItemDataType.File;
             }
-            else if (dt.Contains(DataFormats.Html))
+            else if (formats.Contains(DataFormats.Html))
             {
-                ttype = DroppedPayloadType.Url;
+                ttype = ItemDataType.Url;
             }
 
             return ttype;
@@ -386,7 +361,7 @@ namespace Ephemera.IconicSelector
         /// <param name="s"></param>
         void TraceLine(string s)
         {
-            Trace?.Invoke(this, new($"DISPLAY {s}"));
+            Console.WriteLine($"DISPLAY {s}");
         }
         #endregion
     }
