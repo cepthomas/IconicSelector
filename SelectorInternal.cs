@@ -298,6 +298,8 @@ namespace Ephemera.IconicSelector
             itemd.DoMouseClick += Itemd_DoMouseClick;
             itemd.DroppedPayload += Itemd_DroppedPayload;
             itemd.CursorLocationChanged += Itemd_CursorLocationChanged;
+            toolTip1.SetToolTip(itemd, value.ToString());
+
 
             Controls.Add(itemd);
 
@@ -390,6 +392,131 @@ namespace Ephemera.IconicSelector
             //python version  https://stackoverflow.com/a/28952464
             //file spec  https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-shllink/16cb4ca1-9339-4d0c-a68d-bf1d6cc0f943?redirectedfrom=MSDN
 
+            // ok @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Firefox.lnk",
+            // ng @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Administrative Tools\Performance Monitor.lnk",
+
+            string? path = null;
+
+            // HeaderSize: (4 bytes, offset 0x0000), 0x0000004C as required.
+            // LinkCLSID: (16 bytes, offset 0x0004), 00021401-0000-0000-C000-000000000046.
+            // LinkFlags: (4 bytes, offset 0x0014), 0x0008009B means the following LinkFlags (section 2.1.1) are set:
+            //     §   HasLinkTargetIDList
+            //     §   HasLinkInfo
+            //     §   HasRelativePath
+            //     §   HasWorkingDir
+            //     §   IsUnicode
+            //     §   EnableTargetMetadata
+            // FileAttributes: (4 bytes, offset 0x0018), 0x00000020, means the following FileAttributesFlags (section 2.1.2) are set:
+            //     §   FILE_ATTRIBUTE_ARCHIVE
+            // CreationTime: (8 bytes, offset 0x001C) FILETIME 9/12/08, 8:27:17PM.
+            // AccessTime: (8 bytes, offset 0x0024) FILETIME 9/12/08, 8:27:17PM.
+            // WriteTime: (8 bytes, offset 0x002C) FILETIME 9/12/08, 8:27:17PM.
+            // FileSize: (4 bytes, offset 0x0034), 0x00000000.
+            // IconIndex: (4 bytes, offset 0x0038), 0x00000000.
+            // ShowCommand: (4 bytes, offset 0x003C), SW_SHOWNORMAL(1).
+            // Hotkey: (2 bytes, offset 0x0040), 0x0000.
+            // Reserved: (2 bytes, offset 0x0042), 0x0000.
+            // Reserved2: (4 bytes, offset 0x0044), 0 x00000000.
+            // Reserved3: (4 bytes, offset 0x0048), 0 x00000000.
+
+
+            using var br = new BinaryReader(File.OpenRead(filepath));
+            try
+            {
+                // skip HeaderSize
+                br.ReadBytes(4);
+
+                // skip LinkCLSID
+                br.ReadBytes(16);
+
+                // read the LinkFlags structure
+                uint lflags = br.ReadUInt32();
+
+                bool HasLinkTargetIDList = (lflags & 0X00000001) > 0; // ok
+                bool HasLinkInfo = (lflags & 0X00000002) > 0; // ok
+                bool HasName = (lflags & 0X00000004) > 0; // ok  ng
+                bool HasRelativePath = (lflags & 0X00000008) > 0; // ok
+
+                bool HasWorkingDir = (lflags & 0X00000010) > 0; // ok
+                bool HasArguments = (lflags & 0X00000020) > 0; // ng
+                bool HasIconLocation = (lflags & 0X00000040) > 0; // ng
+                bool IsUnicode = (lflags & 0X00000080) > 0; // ok ng
+
+                bool ForceNoLinkInfo = (lflags & 0X00000100) > 0; // ng
+                bool HasExpString = (lflags & 0X00000200) > 0; // ng
+                bool RunInSeparateProcess = (lflags & 0X00000400) > 0;
+                bool Unused1 = (lflags & 0X00000800) > 0;
+
+                bool HasDarwinID = (lflags & 0X00001000) > 0;
+                bool RunAsUser = (lflags & 0X00002000) > 0;
+                bool HasExpIcon = (lflags & 0X00004000) > 0;
+                bool NoPidlAlias = (lflags & 0X00008000) > 0;
+
+                bool Unused2 = (lflags & 0X00010000) > 0;
+                bool RunWithShimLayer = (lflags & 0X00020000) > 0;
+                bool ForceNoLinkTrack = (lflags & 0X00040000) > 0;
+                bool EnableTargetMetadata = (lflags & 0X00080000) > 0;
+
+                bool DisableLinkPathTracking = (lflags & 0X00100000) > 0;
+                bool DisableKnownFolderTracking = (lflags & 0X00200000) > 0;
+                bool DisableKnownFolderAlias = (lflags & 0X00400000) > 0;
+                bool AllowLinkToLink = (lflags & 0X00800000) > 0;
+
+                bool UnaliasOnSave = (lflags & 0X01000000) > 0;
+                bool PreferEnvironmentPath = (lflags & 0X02000000) > 0; // ng
+                bool KeepLocalIDListForUNCTarget = (lflags & 0X04000000) > 0;
+
+
+                //>>>>> Because HasLinkTargetIDList is set, a LinkTargetIDList structure(section 2.2) follows:
+                //>>>>> Because HasLinkInfo is set, a LinkInfo structure(section 2.3) follows:
+                //>>>>> Because HasRelativePath is set, the RELATIVE_PATH StringData structure(section 2.4) follows:
+                //>>>>> Because HasWorkingDir is set, the WORKING_DIR StringData structure(section 2.4) follows:
+                //>>>>> Extra data section: (100 bytes, offset 0x0167), an ExtraData structure(section 2.5) follows:
+
+
+                // if the HasLinkTargetIDList bit is set then skip the stored IDList structure and header
+                if ((lflags & 0x01) == 1)  // ok 0x009F   ng 0x020003e4 -> 0010000000000000001111100100
+                {
+                    br.ReadBytes(52);
+                    var skip = br.ReadUInt16(); // this counts of how far we need to skip ahead
+                    br.ReadBytes(skip);
+                }
+
+                // get the number of bytes the path contains
+                var length = br.ReadUInt32();
+
+                // skip LinkInfoHeaderSize, LinkInfoFlgas, and VolumeIDOffset
+                var bb = br.ReadBytes(12);
+
+                // Find the location of the LocalBasePath position
+                var lbpos = br.ReadUInt32();
+
+                // Skip to the path position (subtract the length of the read (4 bytes), the length of
+                // the skip (12 bytes), and the length of the lbpos read (4 bytes) from the lbpos)
+                br.ReadBytes((int)lbpos - 20);
+
+                var size = length - lbpos - 2;
+                var bytePath = br.ReadBytes((int)size);
+
+                path = Encoding.UTF8.GetString(bytePath, 0, bytePath.Length);
+            }
+            catch (Exception e)
+            {
+            }
+
+            return path;
+        }
+
+
+        string? GetLinkTarget_orig(string filepath)  // TODO1 fix and put somewhere else?
+        {
+            //python version  https://stackoverflow.com/a/28952464
+            //file spec  https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-shllink/16cb4ca1-9339-4d0c-a68d-bf1d6cc0f943?redirectedfrom=MSDN
+
+            // ok @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Firefox.lnk",
+            // ng @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Administrative Tools\Performance Monitor.lnk",
+
+
             string? path = null;
 
             using var br = new BinaryReader(File.OpenRead(filepath));
@@ -421,8 +548,8 @@ namespace Ephemera.IconicSelector
                 // Skip to the path position (subtract the length of the read (4 bytes), the length of
                 // the skip (12 bytes), and the length of the lbpos read (4 bytes) from the lbpos)
                 br.ReadBytes((int)lbpos - 0x14); //TODO1 lbpos is 0 for:
-                    //C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Administrative Tools\Performance Monitor.lnk
-                    //C:\ProgramData\Microsoft\Windows\Start Menu\Programs\System Tools\Task Manager.lnk
+                                                 //C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Administrative Tools\Performance Monitor.lnk
+                                                 //C:\ProgramData\Microsoft\Windows\Start Menu\Programs\System Tools\Task Manager.lnk
 
                 var size = length - lbpos - 0x02;
                 var bytePath = br.ReadBytes((int)size);
@@ -435,6 +562,8 @@ namespace Ephemera.IconicSelector
 
             return path;
         }
+
+
 
         /// <summary>
         /// Version that doesn't throw. TODO1 put somewhere else?

@@ -33,10 +33,12 @@ namespace Ephemera.IconicSelector.Test
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             btnGo1 = new Button();
             btnGo2 = new Button();
             tvInfo = new Ephemera.NBagOfUis.TextViewer();
             tbState = new TextBox();
+            toolTip1 = new ToolTip(components);
             SuspendLayout();
             // 
             // btnGo1
@@ -104,5 +106,6 @@ namespace Ephemera.IconicSelector.Test
         private Button btnGo2;
         private TextBox tbState;
         private Ephemera.NBagOfUis.TextViewer tvInfo;
+        private ToolTip toolTip1;
     }
 }

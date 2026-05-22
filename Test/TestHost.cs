@@ -93,7 +93,7 @@ namespace Ephemera.IconicSelector.Test
             for (int i = 0; i < 10; i++)
             {
                 var text = $"Item {i} AAA BBB CCC DDD EEE";
-                icsel.AddUserItem(text, bmps[rand.Next(0, bmps.Length)], $"fullname{i}");
+                icsel.AddUserItem(text, bmps[rand.Next(0, bmps.Length)], $"This the payload for {text}");
             }
 
             // Resource items.
@@ -101,9 +101,9 @@ namespace Ephemera.IconicSelector.Test
             [
                 // Windows standard locations  %PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs
                 @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Firefox.lnk",
+                @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Administrative Tools\Performance Monitor.lnk",
                 @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Notepad++.lnk",
                 @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022.lnk",
-                @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Administrative Tools\Performance Monitor.lnk",
                 @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\System Tools\Task Manager.lnk",
                 // Plain files
                 @"%USERPROFILE%\OneDrive\Tools\backup_loose.py",

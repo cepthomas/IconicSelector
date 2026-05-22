@@ -57,6 +57,8 @@ namespace Ephemera.IconicSelector
     #endregion
 
 
+
+
     /// <summary>API.</summary>
     public partial class Selector : UserControl
     {
@@ -98,6 +100,8 @@ namespace Ephemera.IconicSelector
         public Bitmap UrlImage { get; set; }
         #endregion
 
+        ToolTip toolTip1 = new();// components);
+
         #region Events
         /// <summary>Tell client that item was clicked - OpMode = Click.</summary>
         public new event EventHandler<ClickEventArgs>? Click;
@@ -118,12 +122,10 @@ namespace Ephemera.IconicSelector
             FolderImage = Icon.ExtractIcon("shell32.dll", 3, false)!.ToBitmap();
             UrlImage = Icon.ExtractIcon("shell32.dll", 13, false)!.ToBitmap();
             DefaultImage = Icon.ExtractIcon("shell32.dll", 23, false)!.ToBitmap();
-
-            toolTip1.SetToolTip(userControl1, "Your text here");
         }
         #endregion
 
-        #region Functions
+        #region Functions - API
         /// <summary>
         /// Add a resource - file, directory, url. Will determine the type, icon, and caption.
         /// </summary>
@@ -137,7 +139,7 @@ namespace Ephemera.IconicSelector
             string namelc = name.ToLower();
             string targetname = "???";
 
-            ///// Determine target type.
+            // Determine target type.
             FileInfo finfo = new(name);
 
             // Expand Link?
@@ -160,6 +162,7 @@ namespace Ephemera.IconicSelector
                 bmp = FolderImage;
                 dtype = ItemDataType.Dir;
             }
+
             // File?
             else if (File.Exists(name))
             {
@@ -169,6 +172,7 @@ namespace Ephemera.IconicSelector
                 bmp = icon is null ? DefaultImage : icon.ToBitmap();
                 dtype = ItemDataType.File;
             }
+
             // URL?
             else if (namelc.StartsWith("http://") || namelc.StartsWith("https://") || namelc.StartsWith("file://"))
             {
