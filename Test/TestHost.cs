@@ -8,6 +8,7 @@ using System.Drawing.Imaging;
 using Ephemera.NBagOfTricks;
 using Ephemera.NBagOfUis;
 using Ephemera.IconicSelector;
+using System.Linq;
 
 
 namespace Ephemera.IconicSelector.Test
@@ -87,11 +88,43 @@ namespace Ephemera.IconicSelector.Test
                 ImageSize = imageSize,
             };
 
+            // User items.
             var rand = new Random();
-            for (int i = 0; i < 30; i++)
+            for (int i = 0; i < 10; i++)
             {
                 var text = $"Item {i} AAA BBB CCC DDD EEE";
-                icsel.AddItem(ItemDataType.None, text, bmps[rand.Next(0, bmps.Length)], $"fullname{i}");
+                icsel.AddUserItem(text, bmps[rand.Next(0, bmps.Length)], $"fullname{i}");
+            }
+
+            // Resource items.
+            string[] res =
+            [
+                // Windows standard locations  %PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs
+                @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Firefox.lnk",
+                @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Notepad++.lnk",
+                @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022.lnk",
+                @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Administrative Tools\Performance Monitor.lnk",
+                @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\System Tools\Task Manager.lnk",
+                // Plain files
+                @"%USERPROFILE%\OneDrive\Tools\backup_loose.py",
+                @"%USERPROFILE%\OneDrive\Tools\Wavosaur.exe",
+                @"%USERPROFILE%\OneDrive\Tools\procexp.exe",
+                @"C:\Dev\Libs\IconicSelector\Test\Files\color_wheel.png",
+                @"%USERPROFILE%\OneDrive\OneDriveDocuments\eat\Dried Cherry Scones.txt",
+                @"%USERPROFILE%\OneDrive\OneDriveDocuments\eat\faves\bean-potato-gratin.pdf",
+                @"%USERPROFILE%\OneDrive\OneDriveDocuments\eat\faves\Beans.docx",
+                // Plain folders
+                @"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Startup",
+                @"%USERPROFILE%\OneDrive\OneDriveDocuments",
+                @"C:\Dev\Apps",
+                // URLs
+                @"https://www.bobrosslipsum.com/",
+                @"https://en.wikipedia.org/wiki/INI_file",
+            ];
+
+            for (int i = 0; i < res.Length; i++)
+            {
+                icsel.AddResourceItem(Environment.ExpandEnvironmentVariables(res[i]));
             }
 
             // Hook up events.

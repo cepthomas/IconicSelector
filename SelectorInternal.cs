@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -20,13 +21,13 @@ namespace Ephemera.IconicSelector
     public partial class Selector : UserControl
     {
         #region Fields
-        /// <summary>Current config.</summary>
+        /// <summary>Backing field for Style.</summary>
         SelectorStyle _style = SelectorStyle.Icon;
 
-        /// <summary>Current config.</summary>
+        /// <summary>Backing field for NumColumns.</summary>
         int _numColumns = 1;
 
-        /// <summary>Image size.</summary>
+        /// <summary>Backing field for ImageSize.</summary>
         Size _imageSize = new(32, 32);
 
         /// <summary>All entries in the collection.</summary>
@@ -49,15 +50,6 @@ namespace Ephemera.IconicSelector
 
         /// <summary>Meta index.</summary>
         const int IN_TARGET_CENTER = -2;
-
-        /// <summary>If no valid image available.</summary>
-        readonly Bitmap _defaultImage;
-
-        /// <summary>If no valid image available.</summary>
-        readonly Bitmap _folderImage;
-
-        /// <summary>If no valid image available.</summary>
-        readonly Bitmap _urlImage;
         #endregion
 
         #region Lifecycle
@@ -71,9 +63,9 @@ namespace Ephemera.IconicSelector
             {
                 _itemds.ForEach(itemd => { itemd.Dispose(); });
                 _itemds.Clear();
-                _defaultImage?.Dispose();
-                _folderImage?.Dispose();
-                _urlImage?.Dispose();
+                DefaultImage?.Dispose();
+                FolderImage?.Dispose();
+                UrlImage?.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -170,80 +162,20 @@ namespace Ephemera.IconicSelector
 
             switch (e.DataType)
             {
-                case ItemDataType.Item:
-                    {
-                        var draggedItem = (ItemDisplay)e.Payload;
-                        TraceLine($"Dropped item -> [{draggedItem}]");
-                        // Insert a copy of the dragged item at the insert index.
-                        Item it = draggedItem.Item;
-                        AddItem(ItemDataType.Item, it.Caption, it.Bitmap, it.Value, _insertIndex);
-                        // Remove the original dragged item.
-                        RemoveItem(draggedItem);
-                    }
+                case DroppedDataType.Item: // handle here
+                    var draggedItem = (ItemDisplay)e.Payload;
+                    TraceLine($"Dropped item -> [{draggedItem}]");
+                    // Insert a copy of the dragged item at the insert index.
+                    Item item = draggedItem.Item;
+                    AddItem(ItemDataType.Item, item.Caption, item.Bitmap, item.Value, _insertIndex);
+                    // Remove the original dragged item.
+                    RemoveItem(draggedItem);
                     break;
 
-                case ItemDataType.File:
-                    {
-                        var fpath = (string)e.Payload;
-                        var fn = Path.GetFileName(fpath);
-                        TraceLine($"Dropped file -> [{fpath}]");
-
-                        try
-                        {
-                            var bmp = Icon.ExtractAssociatedIcon(fpath)!.ToBitmap();
-                            AddItem(ItemDataType.File, fn, bmp, fpath, _insertIndex);
-                        }
-                        catch (Exception)
-                        {
-                            AddItem(ItemDataType.File, fn, _defaultImage, fpath, _insertIndex);
-                        }
-                    }
-                    break;
-
-                case ItemDataType.Dir:
-                    {
-                        var dpath = (string)e.Payload;
-                        //var dn = Directory.GetDirectoryRoot(dpath);
-                        var dn = Path.GetFileName(dpath);
-                        TraceLine($"Dropped dir -> [{dpath}]");
-
-                        try
-                        {
-                            var bmp = Icon.ExtractAssociatedIcon(dpath)!.ToBitmap();
-                            AddItem(ItemDataType.File, dn, bmp, dpath, _insertIndex);
-                        }
-                        catch (Exception)
-                        {
-                            AddItem(ItemDataType.File, dn, _folderImage, dpath, _insertIndex);
-                        }
-                    }
-                    break;
-
-                case ItemDataType.Url:
-                    var fullurl = (string)e.Payload;
-                    var uri = new Uri(fullurl);
-
-                    try
-                    {
-                        // Try to get favicon.
-                        using var httpClient = new HttpClient();
-                        var ss = $"https://www.google.com/s2/favicons?domain={uri.Host}";
-                        // Run async client synchronously. Could be dangerous...
-                        var task = Task.Run(() => httpClient.GetStreamAsync(ss));
-                        task.Wait();
-                        using var img = Image.FromStream(task.Result);
-                        AddItem(ItemDataType.Url, uri.Host, new Bitmap(img), fullurl, _insertIndex);
-                    }
-                    catch (HttpRequestException ex)
-                    {
-                        TraceLine($"Favicon request failed - using default: {ex.Message}");
-                        AddItem(ItemDataType.Url, uri.Host, _urlImage, fullurl, _insertIndex);
-                    }
-                    catch (Exception)
-                    {
-                        // Client handles.
-                        throw;
-                    }
+                case DroppedDataType.File:
+                case DroppedDataType.Url:
+                    var res = (string)e.Payload;
+                    AddResourceItem(res, index);
                     break;
 
                 default:
@@ -290,6 +222,99 @@ namespace Ephemera.IconicSelector
         #endregion
 
         #region Internals
+        /// <summary>
+        /// Common function to add a new item. Adjusts image for mode.
+        /// </summary>
+        /// <param name="dtype">The value type</param>
+        /// <param name="caption">For display below/next to image</param>
+        /// <param name="bmp">Bitmap</param>
+        /// <param name="value">Meaningful for client use</param>
+        /// <param name="index">Where to insert, -1 is append</param>
+        void AddItem(ItemDataType dtype, string caption, Bitmap bmp, object value, int index = -1)
+        {
+            switch (Style)
+            {
+                case SelectorStyle.Icon:
+                    // Use image as provided.
+                    break;
+
+                case SelectorStyle.Tile:
+                    // Use image as provided.
+                    break;
+
+                case SelectorStyle.Clip:
+                    // Copy pixels starting from 0, 0 to fill the visible area.
+                    PixelBitmap pbmpin = new(bmp);
+                    PixelBitmap pbmpout = new(ImageSize.Width, ImageSize.Height);
+
+                    for (int x = 0; x < ImageSize.Width && x < bmp.Width; x++)
+                    {
+                        for (int y = 0; y < ImageSize.Height && y < bmp.Height; y++)
+                        {
+                            pbmpout.SetPixel(x, y, pbmpin.GetPixel(x, y));
+                        }
+                    }
+
+                    bmp = pbmpout.GetBitmap();
+                    pbmpin.Dispose();
+                    pbmpout.Dispose();
+                    break;
+
+                case SelectorStyle.Fill:
+                    bmp = ResizeBitmap(bmp, ImageSize.Width, ImageSize.Height);
+                    break;
+
+                case SelectorStyle.FitHeight:
+                    {
+                        float ratio = (float)_itemdSize.Height / bmp.Height;
+                        int tnWidth = (int)(bmp.Width * ratio);
+                        int tnHeight = (int)(bmp.Height * ratio);
+                        var bmpt = ResizeBitmap(bmp, tnWidth, tnHeight);
+                        bmp = bmpt.Clone(new(0, 0, _itemdSize.Width, _itemdSize.Height), PixelFormat.Format32bppArgb);
+                    }
+                    break;
+
+                case SelectorStyle.FitWidth:
+                    {
+                        float ratio = (float)_itemdSize.Width / bmp.Width;
+                        int tnHeight = (int)(bmp.Height * ratio);
+                        int tnWidth = (int)(bmp.Width * ratio);
+                        var bmpt = ResizeBitmap(bmp, tnWidth, tnHeight);
+                        bmp = bmpt.Clone(new(0, 0, _itemdSize.Width, _itemdSize.Height), PixelFormat.Format32bppArgb);
+                    }
+                    break;
+            }
+
+            Item item = new(dtype, caption, bmp, value);
+
+            ItemDisplay itemd = new(item)
+            {
+                IndicatorColor = IndicatorColor,
+                ImageRect = _itemdImageRect,
+                TextRect = _itemdTextRect,
+                Size = _itemdSize,
+                AllowExternalSource = AllowExternalSource,
+            };
+            itemd.DoMouseClick += Itemd_DoMouseClick;
+            itemd.DroppedPayload += Itemd_DroppedPayload;
+            itemd.CursorLocationChanged += Itemd_CursorLocationChanged;
+
+            Controls.Add(itemd);
+
+            // Where to put it?
+            if (index >= 0 && index < _itemds.Count)
+            {
+                _itemds.Insert(index, itemd);
+            }
+            else // append
+            {
+                _itemds.Add(itemd);
+            }
+
+            UpdateItemsList();
+            Invalidate(true); // refresh everything
+        }
+
         /// <summary>
         /// Calculates geometry of display elements.
         /// </summary>
@@ -350,6 +375,82 @@ namespace Ephemera.IconicSelector
                 int yloc = yinc * row + Spacing;
 
                 _itemds[i].Location = new Point(xloc, yloc);
+            }
+        }
+
+        /// <summary>
+        /// Source - https://stackoverflow.com/a/64126237
+        /// Posted by GLJ
+        /// Retrieved 2026-05-22, License - CC BY-SA 4.0
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <returns></returns>
+        string? GetLinkTarget(string filepath)  // TODO1 fix and put somewhere else?
+        {
+            //python version  https://stackoverflow.com/a/28952464
+            //file spec  https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-shllink/16cb4ca1-9339-4d0c-a68d-bf1d6cc0f943?redirectedfrom=MSDN
+
+            string? path = null;
+
+            using var br = new BinaryReader(File.OpenRead(filepath));
+            try
+            {
+                // skip the first 20 bytes (HeaderSize and LinkCLSID)
+                br.ReadBytes(0x14);
+
+                // read the LinkFlags structure (4 bytes)
+                uint lflags = br.ReadUInt32();
+
+                // if the HasLinkTargetIDList bit is set then skip the stored IDList structure and header
+                if ((lflags & 0x01) == 1)
+                {
+                    br.ReadBytes(0x34);
+                    var skip = br.ReadUInt16(); // this counts of how far we need to skip ahead
+                    br.ReadBytes(skip);
+                }
+
+                // get the number of bytes the path contains
+                var length = br.ReadUInt32();
+
+                // skip 12 bytes (LinkInfoHeaderSize, LinkInfoFlgas, and VolumeIDOffset)
+                br.ReadBytes(0x0C);
+
+                // Find the location of the LocalBasePath position
+                var lbpos = br.ReadUInt32();
+
+                // Skip to the path position (subtract the length of the read (4 bytes), the length of
+                // the skip (12 bytes), and the length of the lbpos read (4 bytes) from the lbpos)
+                br.ReadBytes((int)lbpos - 0x14); //TODO1 lbpos is 0 for:
+                    //C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Administrative Tools\Performance Monitor.lnk
+                    //C:\ProgramData\Microsoft\Windows\Start Menu\Programs\System Tools\Task Manager.lnk
+
+                var size = length - lbpos - 0x02;
+                var bytePath = br.ReadBytes((int)size);
+
+                path = Encoding.UTF8.GetString(bytePath, 0, bytePath.Length);
+            }
+            catch (Exception e)
+            {
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Version that doesn't throw. TODO1 put somewhere else?
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        Icon? SafeExtractIcon(string name)
+        {
+            try
+            {
+                var icon = Icon.ExtractAssociatedIcon(name);
+                return icon;
+            }
+            catch (Exception)
+            {
+                return null;
             }
         }
 

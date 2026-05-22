@@ -15,11 +15,14 @@ namespace Ephemera.IconicSelector
     /// <summary>Where the cursor is in ItemDisplay.</summary>
     internal enum CursorLocation { None, Left, Right, Center }
 
+    /// <summary>Drag and drop payload data type.</summary>
+    internal enum DroppedDataType { Item, File, Url } // File could be dir, lnk, ...
+
     /// <summary>User drag-dropped something from elsewhere.</summary>
-    internal class DroppedPayloadEventArgs(ItemDataType dtype, object payload) : EventArgs
+    internal class DroppedPayloadEventArgs(DroppedDataType dataType, object payload) : EventArgs
     {
         /// <summary>The payload type</summary>
-        public ItemDataType DataType { get; init; } = dtype;
+        public DroppedDataType DataType { get; init; } = dataType;
 
         /// <summary>The drag source</summary>
         public object Payload { get; init; } = payload;
@@ -30,6 +33,21 @@ namespace Ephemera.IconicSelector
             return $"DataType:{DataType} Payload:[{Payload}]";
         }
     }
+
+    //internal class DroppedPayloadEventArgs(ItemDataType dtype, object payload) : EventArgs
+    //{
+    //    /// <summary>The payload type</summary>
+    //    public ItemDataType DataType { get; init; } = dtype;
+
+    //    /// <summary>The drag source</summary>
+    //    public object Payload { get; init; } = payload;
+
+    //    /// <summary>Read me.</summary>
+    //    public override string ToString()
+    //    {
+    //        return $"DataType:{DataType} Payload:[{Payload}]";
+    //    }
+    //}
 
     /// <summary>User moving over item.</summary>
     internal class CursorLocationEventArgs(CursorLocation cloc) : EventArgs
@@ -97,6 +115,8 @@ namespace Ephemera.IconicSelector
             SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
             Item = item;
             AllowDrop = true;
+
+
         }
 
         /// <summary>
@@ -198,59 +218,78 @@ namespace Ephemera.IconicSelector
         protected override void OnDragDrop(DragEventArgs e)
         {
             if (e.Data is null) throw new InvalidOperationException();
-            // ItemDataType dtype = GetDataType(e);
-            //   TraceLine($"OnDragDrop() dtype:{dtype}");
-
             if (_lastCursorLoc == CursorLocation.None || _lastCursorLoc == CursorLocation.Center) return;
 
-
-            var formats = e.Data.GetFormats();
-            if (formats.Contains(typeof(ItemDisplay).ToString()))
+            if (e.Data.GetDataPresent(typeof(Item)))
             {
+                // Pass along as is.
                 var idata = e.Data.GetData(typeof(ItemDisplay));
-                if (idata is not null)
-                {
-                    var src = (ItemDisplay)idata;
-                    DroppedPayload?.Invoke(this, new(ItemDataType.Item, src));
-                }
+                var src = (ItemDisplay)idata!;
+                DroppedPayload?.Invoke(this, new(DroppedDataType.Item, src));
             }
-            else if (formats.Contains(DataFormats.FileDrop))
+            else if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
-                var fdata = e.Data.GetData(DataFormats.FileDrop);
-                if (fdata is not null)
-                {
-                    var d = (string[])fdata;
-                    d.ForEach(path =>
-                    {
-                        if (File.Exists(path))
-                        {
-                            DroppedPayload?.Invoke(this, new(ItemDataType.File, path));
-                        }
-                        else if (Directory.Exists(path))
-                        {
-                            DroppedPayload?.Invoke(this, new(ItemDataType.Dir, path));
-                        }
-                        // else TODO1???
-                    });
-                }
+                // Flatten to one event per drop.
+                var d = (string[])e.Data.GetData(DataFormats.FileDrop)!;
+                d.ForEach(path => { DroppedPayload?.Invoke(this, new(DroppedDataType.File, path)); });
             }
-            else if (formats.Contains(DataFormats.Html))
+            else if (e.Data.GetDataPresent(DataFormats.Html))
             {
-                var hdata = e.Data.GetData(DataFormats.Html);
-                if (hdata is not null)
+                // Extract url from standard format.
+                var s = (string)e.Data.GetData(DataFormats.Html)!;
+                var parts = s.SplitByToken(Environment.NewLine);
+                parts.Where(p => p.Contains("<!--StartFragment")).ForEach(p =>
                 {
-                    var s = (string)hdata;
-                    var parts = s.SplitByToken(Environment.NewLine);
-                    parts.Where(p => p.Contains("<!--StartFragment")).ForEach(p =>
-                    {
-                        //<!--StartFragment--><A HREF="https://www.aaa.com/watch?what">Title</A>
-                        int start = p.IndexOf("http");
-                        int end = p.IndexOf("\">", start);
-                        var fullurl = p[start..end];
-                        DroppedPayload?.Invoke(this, new(ItemDataType.Url, fullurl));
-                    });
-                }
+                    //<!--StartFragment--><A HREF="https://www.aaa.com/watch?what">Title</A>
+                    int start = p.IndexOf("http");
+                    int end = p.IndexOf("\">", start);
+                    var fullurl = p[start..end];
+                    DroppedPayload?.Invoke(this, new(DroppedDataType.Url, fullurl));
+                });
             }
+
+
+
+
+            //var formats = e.Data.GetFormats();
+            //if (formats.Contains(ItemType))
+            //{
+            //    var idata = e.Data.GetData(typeof(ItemDisplay));
+            //    if (idata is not null)
+            //    {
+            //        var src = (ItemDisplay)idata;
+            //        DroppedPayload?.Invoke(this, new(ItemType, src));
+            //    }
+            //}
+            //else if (formats.Contains(DataFormats.FileDrop))
+            //{
+            //    var fdata = e.Data.GetData(DataFormats.FileDrop);
+            //    if (fdata is not null)
+            //    {
+            //        var d = (string[])fdata;
+            //        d.ForEach(path =>
+            //        {
+            //            DroppedPayload?.Invoke(this, new(DataFormats.FileDrop, path));
+            //        });
+            //    }
+            //}
+            //else if (formats.Contains(DataFormats.Html))
+            //{
+            //    var hdata = e.Data.GetData(DataFormats.Html);
+            //    if (hdata is not null)
+            //    {
+            //        var s = (string)hdata;
+            //        var parts = s.SplitByToken(Environment.NewLine);
+            //        parts.Where(p => p.Contains("<!--StartFragment")).ForEach(p =>
+            //        {
+            //            //<!--StartFragment--><A HREF="https://www.aaa.com/watch?what">Title</A>
+            //            int start = p.IndexOf("http");
+            //            int end = p.IndexOf("\">", start);
+            //            var fullurl = p[start..end];
+            //            DroppedPayload?.Invoke(this, new(DataFormats.Html, fullurl));
+            //        });
+            //    }
+            //}
 
             base.OnDragDrop(e);
         }

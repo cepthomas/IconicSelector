@@ -10,9 +10,9 @@ using System.Drawing.Drawing2D;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.IO;
+using System.Drawing.Imaging;
 using Ephemera.NBagOfTricks;
 using Ephemera.NBagOfUis;
-using System.Drawing.Imaging;
 
 
 namespace Ephemera.IconicSelector
@@ -87,6 +87,15 @@ namespace Ephemera.IconicSelector
 
         /// <summary>Space between items</summary>
         public int Spacing { get; set; } = 10;
+
+        /// <summary>If no valid image available.</summary>
+        public Bitmap DefaultImage { get; set; }
+
+        /// <summary>If no valid image available.</summary>
+        public Bitmap FolderImage { get; set; }
+
+        /// <summary>If no valid image available.</summary>
+        public Bitmap UrlImage { get; set; }
         #endregion
 
         #region Events
@@ -106,107 +115,186 @@ namespace Ephemera.IconicSelector
             AutoScroll = true;
 
             // Make default images.
-            _folderImage = Icon.ExtractIcon("shell32.dll", 3, false)!.ToBitmap();
-            _urlImage = Icon.ExtractIcon("shell32.dll", 13, false)!.ToBitmap();
-            _defaultImage = Icon.ExtractIcon("shell32.dll", 23, false)!.ToBitmap();
+            FolderImage = Icon.ExtractIcon("shell32.dll", 3, false)!.ToBitmap();
+            UrlImage = Icon.ExtractIcon("shell32.dll", 13, false)!.ToBitmap();
+            DefaultImage = Icon.ExtractIcon("shell32.dll", 23, false)!.ToBitmap();
+
+            toolTip1.SetToolTip(userControl1, "Your text here");
         }
         #endregion
 
         #region Functions
         /// <summary>
-        /// Add a new item.
+        /// Add a resource - file, directory, url. Will determine the type, icon, and caption.
         /// </summary>
-        /// <param name="dtype">The value type</param>
-        /// <param name="caption">For display below/next to image</param>
-        /// <param name="bmp">Bitmap</param>
-        /// <param name="value">Meaningful for client use</param>
+        /// <param name="name"></param>
         /// <param name="index">Where to insert, -1 is append</param>
-        public void AddItem(ItemDataType dtype, string caption, Bitmap bmp, object value, int index = -1)
+        public void AddResourceItem(string name, int index = -1)
         {
-            // Make a new item. Maybe adjust the image.
-           // bmp ??= _defaultImage;
+            Bitmap bmp = DefaultImage;
+            ItemDataType dtype = ItemDataType.None;
+            string caption = "???";
+            string namelc = name.ToLower();
+            string targetname = "???";
 
-            switch (Style)
+            ///// Determine target type.
+            FileInfo finfo = new(name);
+
+            // Expand Link?
+            if (namelc.EndsWith(".lnk"))
             {
-                case SelectorStyle.Icon:
-                    // Use image as provided.
-                    break;
-
-                case SelectorStyle.Tile:
-                    // Use image as provided.
-                    break;
-
-                case SelectorStyle.Clip:
-                    // Copy pixels starting from 0, 0 to fill the visible area.
-                    PixelBitmap pbmpin = new(bmp);
-                    PixelBitmap pbmpout = new(ImageSize.Width, ImageSize.Height);
-
-                    for (int x = 0; x < ImageSize.Width && x < bmp.Width; x++)
-                    {
-                        for (int y = 0; y < ImageSize.Height && y < bmp.Height; y++)
-                        {
-                            pbmpout.SetPixel(x, y, pbmpin.GetPixel(x, y));
-                        }
-                    }
-
-                    bmp = pbmpout.GetBitmap();
-                    pbmpin.Dispose();
-                    pbmpout.Dispose();
-                    break;
-
-                case SelectorStyle.Fill:
-                    bmp = ResizeBitmap(bmp, ImageSize.Width, ImageSize.Height);
-                    break;
-
-                case SelectorStyle.FitHeight:
-                    {
-                        float ratio = (float)_itemdSize.Height / bmp.Height;
-                        int tnWidth = (int)(bmp.Width * ratio);
-                        int tnHeight = (int)(bmp.Height * ratio);
-                        var bmpt = ResizeBitmap(bmp, tnWidth, tnHeight);
-                        bmp = bmpt.Clone(new(0, 0, _itemdSize.Width, _itemdSize.Height), PixelFormat.Format32bppArgb);
-                    }
-                    break;
-
-                case SelectorStyle.FitWidth:
-                    {
-                        float ratio = (float)_itemdSize.Width / bmp.Width;
-                        int tnHeight = (int)(bmp.Height * ratio);
-                        int tnWidth = (int)(bmp.Width * ratio);
-                        var bmpt = ResizeBitmap(bmp, tnWidth, tnHeight);
-                        bmp = bmpt.Clone(new(0, 0, _itemdSize.Width, _itemdSize.Height), PixelFormat.Format32bppArgb);
-                    }
-                    break;
+                var lname = GetLinkTarget(name);
+                if (lname != null)
+                {
+                    name = lname;
+                    namelc = name.ToLower();
+                }
             }
 
-            Item item = new(dtype, caption, bmp, value);
-
-            ItemDisplay itemd = new(item)
+            // Directory?
+            if (Directory.Exists(name))
             {
-                IndicatorColor = IndicatorColor,
-                ImageRect = _itemdImageRect,
-                TextRect = _itemdTextRect,
-                Size = _itemdSize,
-                AllowExternalSource = AllowExternalSource,
-            };
-            itemd.DoMouseClick += Itemd_DoMouseClick;
-            itemd.DroppedPayload += Itemd_DroppedPayload;
-            itemd.CursorLocationChanged += Itemd_CursorLocationChanged;
-
-            Controls.Add(itemd);
-
-            // Where to put it?
-            if (index >= 0 && index < _itemds.Count)
-            {
-                _itemds.Insert(index, itemd);
+                DirectoryInfo dinfo = new(name);
+                caption = dinfo.Name;
+                targetname = name;
+                bmp = FolderImage;
+                dtype = ItemDataType.Dir;
             }
-            else // append
+            // File?
+            else if (File.Exists(name))
             {
-                _itemds.Add(itemd);
+                caption = namelc.EndsWith(".exe") ? Path.GetFileNameWithoutExtension(name) : finfo.Name;
+                targetname = name;
+                var icon = SafeExtractIcon(targetname);
+                bmp = icon is null ? DefaultImage : icon.ToBitmap();
+                dtype = ItemDataType.File;
+            }
+            // URL?
+            else if (namelc.StartsWith("http://") || namelc.StartsWith("https://") || namelc.StartsWith("file://"))
+            {
+                targetname = name;
+                var fullurl = targetname;
+                var uri = new Uri(fullurl);
+                var parts = name.Split("://");
+                caption = uri.Host;
+
+                try
+                {
+                    // Try to get favicon.
+                    using var httpClient = new HttpClient();
+                    var ss = $"https://www.google.com/s2/favicons?domain={uri.Host}";
+                    // Run async client synchronously. Could be dangerous...
+                    var task = Task.Run(() => httpClient.GetStreamAsync(ss));
+                    task.Wait();
+                    using var img = Image.FromStream(task.Result);
+                    bmp = new Bitmap(img);
+                }
+                catch (Exception e)
+                {
+                    // Async ops carry the original exception in inner.
+                    e = e.InnerException ?? e;
+
+                    switch (e)
+                    {
+                        case HttpRequestException ex:
+                            TraceLine($"Favicon request failed - using default: {ex.Message}");
+                            bmp = UrlImage;
+                            break;
+
+                        default: // Client handles.
+                            throw;
+                    }
+                }
+
+                dtype = ItemDataType.Url;
             }
 
-            UpdateItemsList();
-            Invalidate(true); // refresh everything
+            if (dtype != ItemDataType.None)
+            {
+                AddItem(dtype, caption, bmp, targetname, index);
+            }
+            else
+            {
+                //TODO1 _logger.Error($"Invalid target [{targetname}]");
+            }
+
+            //case DroppedDataType.File:
+            //{
+            //    var fpath = (string)e.Payload;
+
+            //    if (File.Exists(fpath))
+            //    {
+            //        var fn = Path.GetFileName(fpath);
+            //        TraceLine($"Dropped file -> [{fpath}]");
+
+            //        try
+            //        {
+            //            var bmp = SafeExtractIcon(fpath)!.ToBitmap();
+            //            AddItem(ItemDataType.File, fn, bmp, fpath, _insertIndex);
+            //        }
+            //        catch (Exception)
+            //        {
+            //            AddItem(ItemDataType.File, fn, DefaultImage, fpath, _insertIndex);
+            //        }
+            //    }
+            //    else if (Directory.Exists(fpath))
+            //    {
+            //        var dpath = (string)e.Payload;
+            //        //var dn = Directory.GetDirectoryRoot(dpath);
+            //        var dn = Path.GetFileName(dpath);
+            //        TraceLine($"Dropped dir -> [{dpath}]");
+
+            //        try
+            //        {
+            //            var bmp = SafeExtractIcon(dpath)!.ToBitmap();
+            //            AddItem(ItemDataType.File, dn, bmp, dpath, _insertIndex);
+            //        }
+            //        catch (Exception)
+            //        {
+            //            AddItem(ItemDataType.File, dn, FolderImage, dpath, _insertIndex);
+            //        }
+            //    }
+            //    // else TODO1???
+            //}
+
+            //case DroppedDataType.Url:
+            //    var fullurl = (string)e.Payload;
+            //    var uri = new Uri(fullurl);
+
+            //    try
+            //    {
+            //        // Try to get favicon.
+            //        using var httpClient = new HttpClient();
+            //        var ss = $"https://www.google.com/s2/favicons?domain={uri.Host}";
+            //        // Run async client synchronously. Could be dangerous...
+            //        var task = Task.Run(() => httpClient.GetStreamAsync(ss));
+            //        task.Wait();
+            //        using var img = Image.FromStream(task.Result);
+            //        AddItem(ItemDataType.Url, uri.Host, new Bitmap(img), fullurl, _insertIndex);
+            //    }
+            //    catch (HttpRequestException ex)
+            //    {
+            //        TraceLine($"Favicon request failed - using default: {ex.Message}");
+            //        AddItem(ItemDataType.Url, uri.Host, UrlImage, fullurl, _insertIndex);
+            //    }
+            //    catch (Exception)
+            //    {
+            //        // Client handles.
+            //        throw;
+            //    }
+            //    break;
+        }
+
+        /// <summary>
+        /// Add a user-defined item.
+        /// </summary>
+        /// <param name="caption"></param>
+        /// <param name="bmp"></param>
+        /// <param name="value"></param>
+        /// <param name="index">Where to insert, -1 is append</param>
+        public void AddUserItem(string caption, Bitmap bmp, object value, int index = -1)
+        {
+            AddItem(ItemDataType.User, caption, bmp, value, index);
         }
 
         /// <summary>

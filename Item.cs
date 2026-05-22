@@ -5,13 +5,13 @@ using System.Drawing;
 
 namespace Ephemera.IconicSelector
 {
-    /// <summary>Drag and drop payload data.</summary>
-    public enum ItemDataType { None, Item, File, Dir, Url }
+    /// <summary>Value data type.</summary>
+    public enum ItemDataType { None, Item, File, Dir, Url, User }
 
     /// <summary>Describes one item in the collection. Part of API.</summary>
     public class Item : IDisposable
     {
-        /// <summary>Displayed text</summary>
+        /// <summary>Value text</summary>
         public ItemDataType DataType { get; set; } = ItemDataType.None;
 
         /// <summary>Displayed text</summary>
