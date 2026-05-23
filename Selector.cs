@@ -92,12 +92,6 @@ namespace Ephemera.IconicSelector
 
         /// <summary>If no valid image available.</summary>
         public Bitmap DefaultImage { get; set; }
-
-        /// <summary>If no valid image available.</summary>
-        public Bitmap FolderImage { get; set; }
-
-        /// <summary>If no valid image available.</summary>
-        public Bitmap UrlImage { get; set; }
         #endregion
 
         ToolTip toolTip1 = new();// components);
@@ -118,10 +112,10 @@ namespace Ephemera.IconicSelector
             AllowDrop = false;
             AutoScroll = true;
 
-            // Make default images.
-            FolderImage = Icon.ExtractIcon("shell32.dll", 3, false)!.ToBitmap();
-            UrlImage = Icon.ExtractIcon("shell32.dll", 13, false)!.ToBitmap();
+            // Default images.
             DefaultImage = Icon.ExtractIcon("shell32.dll", 23, false)!.ToBitmap();
+            _dirImage = Icon.ExtractIcon("shell32.dll", 3, false)!.ToBitmap();
+            _urlImage = Icon.ExtractIcon("shell32.dll", 13, false)!.ToBitmap();
         }
         #endregion
 
@@ -142,16 +136,16 @@ namespace Ephemera.IconicSelector
             // Determine target type.
             FileInfo finfo = new(name);
 
-            // Expand Link?
-            if (namelc.EndsWith(".lnk"))
-            {
-                var lname = GetLinkTarget(name);
-                if (lname != null)
-                {
-                    name = lname;
-                    namelc = name.ToLower();
-                }
-            }
+            //// Expand Link?
+            //if (namelc.EndsWith(".lnk"))
+            //{
+            //    var lname = Stuff.GetLinkTarget_orig(name); // TODO1
+            //    if (lname != null)
+            //    {
+            //        name = lname;
+            //        namelc = name.ToLower();
+            //    }
+            //}
 
             // Directory?
             if (Directory.Exists(name))
@@ -159,16 +153,16 @@ namespace Ephemera.IconicSelector
                 DirectoryInfo dinfo = new(name);
                 caption = dinfo.Name;
                 targetname = name;
-                bmp = FolderImage;
+                bmp = _dirImage;
                 dtype = ItemDataType.Dir;
             }
 
             // File?
             else if (File.Exists(name))
             {
-                caption = namelc.EndsWith(".exe") ? Path.GetFileNameWithoutExtension(name) : finfo.Name;
+                caption = (namelc.EndsWith(".exe") || namelc.EndsWith(".lnk")) ? Path.GetFileNameWithoutExtension(name) : finfo.Name;
                 targetname = name;
-                var icon = SafeExtractIcon(targetname);
+                var icon = GraphicsUtils.SafeExtractIcon(targetname);
                 bmp = icon is null ? DefaultImage : icon.ToBitmap();
                 dtype = ItemDataType.File;
             }
@@ -202,7 +196,7 @@ namespace Ephemera.IconicSelector
                     {
                         case HttpRequestException ex:
                             TraceLine($"Favicon request failed - using default: {ex.Message}");
-                            bmp = UrlImage;
+                            bmp = _urlImage;
                             break;
 
                         default: // Client handles.
@@ -255,7 +249,7 @@ namespace Ephemera.IconicSelector
             //        }
             //        catch (Exception)
             //        {
-            //            AddItem(ItemDataType.File, dn, FolderImage, dpath, _insertIndex);
+            //            AddItem(ItemDataType.File, dn, _dirImage, dpath, _insertIndex);
             //        }
             //    }
             //    // else TODO1???
@@ -279,7 +273,7 @@ namespace Ephemera.IconicSelector
             //    catch (HttpRequestException ex)
             //    {
             //        TraceLine($"Favicon request failed - using default: {ex.Message}");
-            //        AddItem(ItemDataType.Url, uri.Host, UrlImage, fullurl, _insertIndex);
+            //        AddItem(ItemDataType.Url, uri.Host, _urlImage, fullurl, _insertIndex);
             //    }
             //    catch (Exception)
             //    {
