@@ -165,13 +165,13 @@ namespace Ephemera.IconicSelector
         void Itemd_DroppedPayload(object? sender, DroppedPayloadEventArgs e)
         {
             int index = GetItemIndex(sender);
-            TraceLine($"Itemd_DroppedPayload() index:{index} e:{e}");
+            Tell($"Itemd_DroppedPayload() index:{index} e:{e}");
 
             switch (e.DataType)
             {
                 case DroppedDataType.Item: // handle here
                     var draggedItem = (ItemDisplay)e.Payload;
-                    TraceLine($"Dropped item -> [{draggedItem}]");
+                    Tell($"Dropped item -> [{draggedItem}]");
                     // Insert a copy of the dragged item at the insert index.
                     Item item = draggedItem.Item;
                     AddItem(ItemDataType.Item, item.Caption, item.Bitmap, item.Value, _insertIndex);
@@ -307,7 +307,6 @@ namespace Ephemera.IconicSelector
             itemd.CursorLocationChanged += Itemd_CursorLocationChanged;
             toolTip1.SetToolTip(itemd, value.ToString());
 
-
             Controls.Add(itemd);
 
             // Where to put it?
@@ -334,8 +333,8 @@ namespace Ephemera.IconicSelector
             {
                 case SelectorStyle.Icon:
                     {
-                        _itemdImageRect = new(Pad + ImageSize.Width / 2, Pad, ImageSize.Width, ImageSize.Height);
-                        _itemdTextRect = new(Pad, _itemdImageRect.Bottom + Pad, 2 * ImageSize.Width, ImageSize.Height);
+                        _itemdImageRect = new(Pad + ImageSize.Width, Pad, ImageSize.Width, ImageSize.Height);
+                        _itemdTextRect = new(Pad, _itemdImageRect.Bottom + Pad, 3 * ImageSize.Width, ImageSize.Height);
                         _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
                         Width = Spacing + NumColumns * (_itemdSize.Width + Spacing) + SystemInformation.VerticalScrollBarWidth;
                     }
@@ -344,7 +343,7 @@ namespace Ephemera.IconicSelector
                 case SelectorStyle.Tile:
                     {
                         _itemdImageRect = new(Pad, Pad, ImageSize.Width, ImageSize.Height);
-                        _itemdTextRect = new(_itemdImageRect.Right + Pad, Pad, 2 * ImageSize.Width, ImageSize.Height);
+                        _itemdTextRect = new(_itemdImageRect.Right + Pad, Pad, 3 * ImageSize.Width, ImageSize.Height);
                         _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
                         Width = Spacing + NumColumns * (_itemdSize.Width + Spacing) + SystemInformation.VerticalScrollBarWidth;
                     }
@@ -363,7 +362,7 @@ namespace Ephemera.IconicSelector
                     break;
             }
 
-            TraceLine($"geometry Width:{Width} _itemdSize:{_itemdSize}");
+            Tell($"geometry Width:{Width} _itemdSize:{_itemdSize}");
         }
 
         /// <summary>
@@ -404,7 +403,7 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// Get the item safely.
+        /// Get the item display.
         /// </summary>
         /// <param name="item">ItemDisplay to test</param>
         /// <returns>The item if valid</returns>
@@ -436,9 +435,9 @@ namespace Ephemera.IconicSelector
         /// Debug.
         /// </summary>
         /// <param name="line"></param>
-        void TraceLine(string line)
+        void Tell(string line)
         {
-            Console.WriteLine($"SELECTOR {line}");
+            Console.WriteLine($"SLCT {line}");
         }
         #endregion
     }

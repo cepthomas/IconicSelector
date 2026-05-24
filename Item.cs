@@ -24,10 +24,10 @@ namespace Ephemera.IconicSelector
         public object Value { get; set; } = "???";
 
         /// <summary>Normal constructor</summary>
-        public Item(ItemDataType dtype, string text, Bitmap bmp, object value)
+        public Item(ItemDataType dtype, string caption, Bitmap bmp, object value)
         {
             DataType = dtype;
-            Caption = text;
+            Caption = caption;
             Bitmap = bmp;
             Value = value;
         }
@@ -50,7 +50,7 @@ namespace Ephemera.IconicSelector
         /// <summary>Read me</summary>
         public override string ToString()
         {
-            return $"dtype:{DataType} caption:{Caption} bmp:{Bitmap.Size} value:{Value}";
+            return $"DataType:{DataType} Caption:{Caption} Bitmap:{Bitmap.Size} Value:{Value}";
         }
     }
 }

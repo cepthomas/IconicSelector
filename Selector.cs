@@ -56,9 +56,6 @@ namespace Ephemera.IconicSelector
     }
     #endregion
 
-
-
-
     /// <summary>API.</summary>
     public partial class Selector : UserControl
     {
@@ -92,9 +89,10 @@ namespace Ephemera.IconicSelector
 
         /// <summary>If no valid image available.</summary>
         public Bitmap DefaultImage { get; set; }
-        #endregion
 
-        ToolTip toolTip1 = new();// components);
+        /// <summary>Extra info.</summary>
+        readonly ToolTip toolTip1 = new();
+        #endregion
 
         #region Events
         /// <summary>Tell client that item was clicked - OpMode = Click.</summary>
@@ -136,17 +134,6 @@ namespace Ephemera.IconicSelector
             // Determine target type.
             FileInfo finfo = new(name);
 
-            //// Expand Link?
-            //if (namelc.EndsWith(".lnk"))
-            //{
-            //    var lname = Stuff.GetLinkTarget_orig(name); // TODO1
-            //    if (lname != null)
-            //    {
-            //        name = lname;
-            //        namelc = name.ToLower();
-            //    }
-            //}
-
             // Directory?
             if (Directory.Exists(name))
             {
@@ -160,7 +147,9 @@ namespace Ephemera.IconicSelector
             // File?
             else if (File.Exists(name))
             {
-                caption = (namelc.EndsWith(".exe") || namelc.EndsWith(".lnk")) ? Path.GetFileNameWithoutExtension(name) : finfo.Name;
+                // Remove some extensions.
+                caption = (namelc.EndsWith(".exe") || namelc.EndsWith(".lnk")) ?
+                           Path.GetFileNameWithoutExtension(name) : finfo.Name;
                 targetname = name;
                 var icon = GraphicsUtils.SafeExtractIcon(targetname);
                 bmp = icon is null ? DefaultImage : icon.ToBitmap();
@@ -189,17 +178,17 @@ namespace Ephemera.IconicSelector
                 }
                 catch (Exception e)
                 {
-                    // Async ops carry the original exception in inner.
+                    // Async ops carry the originating exception in inner.
                     e = e.InnerException ?? e;
 
                     switch (e)
                     {
                         case HttpRequestException ex:
-                            TraceLine($"Favicon request failed - using default: {ex.Message}");
+                            Tell($"Favicon request failed - using default: {ex.Message}");
                             bmp = _urlImage;
                             break;
 
-                        default: // Client handles.
+                        default: // Client handles other errors.
                             throw;
                     }
                 }
@@ -213,74 +202,8 @@ namespace Ephemera.IconicSelector
             }
             else
             {
-                //TODO1 _logger.Error($"Invalid target [{targetname}]");
+                throw new ArgumentException($"Invalid resource [{name}]");
             }
-
-            //case DroppedDataType.File:
-            //{
-            //    var fpath = (string)e.Payload;
-
-            //    if (File.Exists(fpath))
-            //    {
-            //        var fn = Path.GetFileName(fpath);
-            //        TraceLine($"Dropped file -> [{fpath}]");
-
-            //        try
-            //        {
-            //            var bmp = SafeExtractIcon(fpath)!.ToBitmap();
-            //            AddItem(ItemDataType.File, fn, bmp, fpath, _insertIndex);
-            //        }
-            //        catch (Exception)
-            //        {
-            //            AddItem(ItemDataType.File, fn, DefaultImage, fpath, _insertIndex);
-            //        }
-            //    }
-            //    else if (Directory.Exists(fpath))
-            //    {
-            //        var dpath = (string)e.Payload;
-            //        //var dn = Directory.GetDirectoryRoot(dpath);
-            //        var dn = Path.GetFileName(dpath);
-            //        TraceLine($"Dropped dir -> [{dpath}]");
-
-            //        try
-            //        {
-            //            var bmp = SafeExtractIcon(dpath)!.ToBitmap();
-            //            AddItem(ItemDataType.File, dn, bmp, dpath, _insertIndex);
-            //        }
-            //        catch (Exception)
-            //        {
-            //            AddItem(ItemDataType.File, dn, _dirImage, dpath, _insertIndex);
-            //        }
-            //    }
-            //    // else TODO1???
-            //}
-
-            //case DroppedDataType.Url:
-            //    var fullurl = (string)e.Payload;
-            //    var uri = new Uri(fullurl);
-
-            //    try
-            //    {
-            //        // Try to get favicon.
-            //        using var httpClient = new HttpClient();
-            //        var ss = $"https://www.google.com/s2/favicons?domain={uri.Host}";
-            //        // Run async client synchronously. Could be dangerous...
-            //        var task = Task.Run(() => httpClient.GetStreamAsync(ss));
-            //        task.Wait();
-            //        using var img = Image.FromStream(task.Result);
-            //        AddItem(ItemDataType.Url, uri.Host, new Bitmap(img), fullurl, _insertIndex);
-            //    }
-            //    catch (HttpRequestException ex)
-            //    {
-            //        TraceLine($"Favicon request failed - using default: {ex.Message}");
-            //        AddItem(ItemDataType.Url, uri.Host, _urlImage, fullurl, _insertIndex);
-            //    }
-            //    catch (Exception)
-            //    {
-            //        // Client handles.
-            //        throw;
-            //    }
-            //    break;
         }
 
         /// <summary>

@@ -5,36 +5,30 @@ using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Drawing.Imaging;
+using System.Linq;
+using System.Threading.Tasks;
 using Ephemera.NBagOfTricks;
 using Ephemera.NBagOfUis;
 using Ephemera.IconicSelector;
-using System.Linq;
 
 
 namespace Ephemera.IconicSelector.Test
 {
-    public partial class TestHost : Form
+    public class TestHost : Form
     {
         readonly Dictionary<string, string> _states = [];
         const int DEF_IMAGE_SIZE = 32;
-        Selector? icsel = null;
         Bitmap[] bmps = [];
+
+        Selector? icsel = null;
 
         public TestHost()
         {
             SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
-            InitializeComponent();
         }
 
         protected override void OnLoad(EventArgs e)
         {
-            tvInfo.BackColor = Color.Cornsilk;
-            tvInfo.Matchers =
-            [
-                new("ERR ", Color.Red),
-                new("WRN ", Color.Green),
-            ];
-
             // Init the images.
             var srcdir = MiscUtils.GetSourcePath();
 
@@ -49,9 +43,9 @@ namespace Ephemera.IconicSelector.Test
             // Add entries to selector. Null forces selector default.
             bmps = [bmp1, bmp2, bmp3, bmp4, defbmp];
 
-            //BuildSelector(SelectorStyle.Icon, OpMode.SingleSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 4);
+            BuildSelector(SelectorStyle.Icon, OpMode.SingleSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 4);
 
-            BuildSelector(SelectorStyle.Tile, OpMode.Click, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 2);
+            //BuildSelector(SelectorStyle.Tile, OpMode.Click, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 2);
 
             //BuildSelector(SelectorStyle.Fill, OpMode.Click, new(128, 64), 3);
 
@@ -62,23 +56,30 @@ namespace Ephemera.IconicSelector.Test
             base.OnLoad(e);
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                icsel?.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
         void BuildSelector(SelectorStyle style, OpMode mode, Size imageSize, int numCols)
         {
             if (icsel is not null)
             {
                 Controls.Remove(icsel);
+                icsel.Dispose();
             }
 
             icsel = new Selector()
             {
                 AllowExternalSource = true,
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                Dock = DockStyle.Fill,
                 AutoScroll = true,
-                BorderStyle = BorderStyle.FixedSingle,
                 DrawFont = new Font("Calibri", 11F, FontStyle.Regular, GraphicsUnit.Point, 0),
                 IndicatorColor = Color.Purple,
-                Location = new Point(12, 22),
-                Size = new Size(184, 453),
                 Spacing = 10,
                 Pad = 8,
                 // variable
@@ -128,19 +129,22 @@ namespace Ephemera.IconicSelector.Test
             }
 
             // Hook up events.
-            icsel.Click += (sender, e) => { tvInfo.Append($"Click -> [{e.ClickedItem}]"); };
+            icsel.Click += (sender, e) => {Tell($"Click -> [{e.ClickedItem}]"); };
+
+            // Size me up.
+            Size = new(icsel.Width + SystemInformation.VerticalScrollBarWidth, 600);
 
             Controls.Add(icsel);
         }
 
-        async void BtnGo1_Click(object sender, EventArgs e)
+        void GetFavicon()
         {
             // Play with uri and favicons.
             var uri = new Uri("https://www.youtube.com/category/color/watch?v=0ju5LRTMFLw&list=RD0ju5LRTMFLw&start_radio=1");
-            tvInfo.Append($"Host [{uri.Host}]");
-            tvInfo.Append($"AbsolutePath [{uri.AbsolutePath}]");
-            tvInfo.Append($"Query [{uri.Query}]");
-            uri.Segments.ForEach(seg => tvInfo.Append($"Segment [{seg}]"));
+            Tell($"Host [{uri.Host}]");
+            Tell($"AbsolutePath [{uri.AbsolutePath}]");
+            Tell($"Query [{uri.Query}]");
+            uri.Segments.ForEach(seg => Tell($"Segment [{seg}]"));
 
             // Download the image and write to the file.
             try
@@ -148,28 +152,48 @@ namespace Ephemera.IconicSelector.Test
                 //https://www.google.com/s2/favicons?domain=the-domain lets you get png favicons from Google cache
                 using var httpClient = new HttpClient();
                 var ss = $"https://www.google.com/s2/favicons?domain={uri.Host}not";
+
+                // Run async client synchronously. Could be dangerous...
+                var task = Task.Run(() => httpClient.GetStreamAsync(ss));
+                task.Wait();
+                using var img = Image.FromStream(task.Result);
+                //bmp = new Bitmap(img);
+
+                // async:
                 //var imageBytes = await httpClient.GetByteArrayAsync(ss);
                 //await File.WriteAllBytesAsync("array", imageBytes);
-                var stream = await httpClient.GetStreamAsync(ss);
-                using var img = Image.FromStream(stream);
+                // var stream = await httpClient.GetStreamAsync(ss);
+                // using var img = Image.FromStream(stream);
+
                 img.Save("file.png", ImageFormat.Png);
                 img.Save("file.jpg", ImageFormat.Jpeg);
             }
-            catch (HttpRequestException ex)
+            catch (Exception e)
             {
-            }
-            catch (Exception ex)
-            {
+                // Async ops carry the originating exception in inner.
+                e = e.InnerException ?? e;
+
+                switch (e)
+                {
+                    case HttpRequestException ex:
+                        Tell($"Favicon request failed: {ex.Message}");
+                        break;
+
+                    default:
+                        Tell($"Other error: {e.Message}");
+                        break;
+                }
             }
         }
 
-        void BtnGo2_Click(object sender, EventArgs e)
+        void Dump()
         {
-            icsel?.GetAllItems().ForEach(it => tvInfo.Append($">>> {it}"));
+            icsel?.GetAllItems().ForEach(it => Tell($">>> {it}"));
         }
 
-        void DefImageRainbow()
+        void DefImage()
         {
+            // Rainbow
             using PixelBitmap pbmp = new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE);
             int blue = 128;
             int incr = 256 / DEF_IMAGE_SIZE;
@@ -187,6 +211,11 @@ namespace Ephemera.IconicSelector.Test
             //using Graphics gr = Graphics.FromImage(_defaultImage);
             //gr.Clear(Color.LightSalmon);
             //gr.DrawString($"????", Font, Brushes.Black, 2, 2);
+        }
+
+        void Tell(string line)
+        {
+            Console.WriteLine($"TEST {line}");
         }
     }
 }
