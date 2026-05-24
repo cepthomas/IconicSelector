@@ -91,11 +91,11 @@ namespace Ephemera.IconicSelector.Test
 
             // User items.
             var rand = new Random();
-            for (int i = 0; i < 10; i++)
-            {
-                var text = $"Item {i} AAA BBB CCC DDD EEE";
-                icsel.AddUserItem(text, bmps[rand.Next(0, bmps.Length)], $"This the payload for {text}");
-            }
+            //for (int i = 0; i < 10; i++)
+            //{
+            //    var text = $"Item {i} AAA BBB CCC DDD EEE";
+            //    icsel.AddUserItem(text, bmps[rand.Next(0, bmps.Length)], $"This the payload for {text}");
+            //}
 
             // Resource items.
             string[] res =
