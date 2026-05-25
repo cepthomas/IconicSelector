@@ -33,14 +33,14 @@ namespace Ephemera.IconicSelector
         /// <summary>All entries in the collection.</summary>
         readonly List<ItemDisplay> _itemds = [];
 
-        /// <summary>ItemDisplay geometry.</summary>
-        Rectangle _itemdImageRect = new();
+        ///// <summary>ItemDisplay geometry.</summary>
+        //Rectangle _itemdImageRect = new();
 
-        /// <summary>ItemDisplay geometry.</summary>
-        Rectangle _itemdTextRect = new();
+        ///// <summary>ItemDisplay geometry.</summary>
+        //Rectangle _itemdTextRect = new();
 
-        /// <summary>ItemDisplay geometry.</summary>
-        Size _itemdSize;
+        ///// <summary>ItemDisplay geometry.</summary>
+        //Size _itemdSize;
 
         /// <summary>Where to move/insert item.</summary>
         int _insertIndex = NOT_IN_TARGET;
@@ -52,11 +52,13 @@ namespace Ephemera.IconicSelector
         const int IN_TARGET_CENTER = -2;
 
         /// <summary>For dirs.</summary>
-        Bitmap _dirImage;
+        Bitmap _bmpDir;
 
         /// <summary>If no favicon available.</summary>
-        Bitmap _urlImage;
+        Bitmap _bmpUrl;
 
+        /// <summary>Extra info.</summary>
+        readonly ToolTip toolTip = new();
         #endregion
 
         #region Lifecycle
@@ -70,8 +72,8 @@ namespace Ephemera.IconicSelector
             {
                 _itemds.ForEach(itemd => { itemd.Dispose(); });
                 _itemds.Clear();
-                _dirImage?.Dispose();
-                _urlImage?.Dispose();
+                _bmpDir?.Dispose();
+                _bmpUrl?.Dispose();
                 DefaultImage?.Dispose();
             }
             base.Dispose(disposing);
@@ -273,21 +275,21 @@ namespace Ephemera.IconicSelector
 
                 case SelectorStyle.FitHeight:
                     {
-                        float ratio = (float)_itemdSize.Height / bmp.Height;
+                        float ratio = (float)ItemDisplay.DisplaySize.Height / bmp.Height;
                         int tnWidth = (int)(bmp.Width * ratio);
                         int tnHeight = (int)(bmp.Height * ratio);
                         var bmpt = MiscUtils.ResizeBitmap(bmp, tnWidth, tnHeight);
-                        bmp = bmpt.Clone(new(0, 0, _itemdSize.Width, _itemdSize.Height), PixelFormat.Format32bppArgb);
+                        bmp = bmpt.Clone(new(0, 0, ItemDisplay.DisplaySize.Width, ItemDisplay.DisplaySize.Height), PixelFormat.Format32bppArgb);
                     }
                     break;
 
                 case SelectorStyle.FitWidth:
                     {
-                        float ratio = (float)_itemdSize.Width / bmp.Width;
+                        float ratio = (float)ItemDisplay.DisplaySize.Width / bmp.Width;
                         int tnHeight = (int)(bmp.Height * ratio);
                         int tnWidth = (int)(bmp.Width * ratio);
                         var bmpt = MiscUtils.ResizeBitmap(bmp, tnWidth, tnHeight);
-                        bmp = bmpt.Clone(new(0, 0, _itemdSize.Width, _itemdSize.Height), PixelFormat.Format32bppArgb);
+                        bmp = bmpt.Clone(new(0, 0, ItemDisplay.DisplaySize.Width, ItemDisplay.DisplaySize.Height), PixelFormat.Format32bppArgb);
                     }
                     break;
             }
@@ -296,16 +298,15 @@ namespace Ephemera.IconicSelector
 
             ItemDisplay itemd = new(item)
             {
-                IndicatorColor = IndicatorColor,
-                ImageRect = _itemdImageRect,
-                TextRect = _itemdTextRect,
-                Size = _itemdSize,
-                AllowExternalSource = AllowExternalSource,
+                // Init instance properties.
+                Size = ItemDisplay.DisplaySize,
+                Font = DrawFont
             };
+            // Hook events.
             itemd.DoMouseClick += Itemd_DoMouseClick;
             itemd.DroppedPayload += Itemd_DroppedPayload;
             itemd.CursorLocationChanged += Itemd_CursorLocationChanged;
-            toolTip1.SetToolTip(itemd, value.ToString());
+            toolTip.SetToolTip(itemd, value.ToString());
 
             Controls.Add(itemd);
 
@@ -333,19 +334,17 @@ namespace Ephemera.IconicSelector
             {
                 case SelectorStyle.Icon:
                     {
-                        _itemdImageRect = new(Pad + ImageSize.Width, Pad, ImageSize.Width, ImageSize.Height);
-                        _itemdTextRect = new(Pad, _itemdImageRect.Bottom + Pad, 3 * ImageSize.Width, ImageSize.Height);
-                        _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
-                        Width = Spacing + NumColumns * (_itemdSize.Width + Spacing) + SystemInformation.VerticalScrollBarWidth;
+                        ItemDisplay.ImageRect = new(Pad + ImageSize.Width, Pad, ImageSize.Width, ImageSize.Height);
+                        ItemDisplay.TextRect = new(Pad, ItemDisplay.ImageRect.Bottom + Pad, 3 * ImageSize.Width, ImageSize.Height);
+                        ItemDisplay.DisplaySize = new(ItemDisplay.TextRect.Right + Pad, ItemDisplay.TextRect.Bottom + Pad);
                     }
                     break;
 
                 case SelectorStyle.Tile:
                     {
-                        _itemdImageRect = new(Pad, Pad, ImageSize.Width, ImageSize.Height);
-                        _itemdTextRect = new(_itemdImageRect.Right + Pad, Pad, 3 * ImageSize.Width, ImageSize.Height);
-                        _itemdSize = new(_itemdTextRect.Right + Pad, _itemdTextRect.Bottom + Pad);
-                        Width = Spacing + NumColumns * (_itemdSize.Width + Spacing) + SystemInformation.VerticalScrollBarWidth;
+                        ItemDisplay.ImageRect = new(Pad, Pad, ImageSize.Width, ImageSize.Height);
+                        ItemDisplay.TextRect = new(ItemDisplay.ImageRect.Right + Pad, Pad, 3 * ImageSize.Width, ImageSize.Height);
+                        ItemDisplay.DisplaySize = new(ItemDisplay.TextRect.Right + Pad, ItemDisplay.TextRect.Bottom + Pad);
                     }
                     break;
 
@@ -354,15 +353,20 @@ namespace Ephemera.IconicSelector
                 case SelectorStyle.FitWidth:
                 case SelectorStyle.FitHeight:
                     {
-                        _itemdImageRect = new(0, 0, ImageSize.Width, ImageSize.Height);
-                        _itemdTextRect = new(); // not used
-                        _itemdSize = _itemdImageRect.Size;
-                        Width = Spacing + NumColumns * (_itemdSize.Width + Spacing) + SystemInformation.VerticalScrollBarWidth;
+                        ItemDisplay.ImageRect = new(0, 0, ImageSize.Width, ImageSize.Height);
+                        ItemDisplay.TextRect = new(); // not used
+                        ItemDisplay.DisplaySize = ItemDisplay.ImageRect.Size;
                     }
                     break;
             }
 
-            Tell($"geometry Width:{Width} _itemdSize:{_itemdSize}");
+            int totalWidth = Spacing + NumColumns * (ItemDisplay.DisplaySize.Width + Spacing);
+            int numRows = _itemds.Count / NumColumns;
+            if (_itemds.Count % NumColumns > 0) numRows++;
+            int totalHeight = Spacing + numRows * (ItemDisplay.DisplaySize.Height + Spacing);
+            TotalArea = new Size(totalWidth, totalHeight);
+
+            Tell($"geometry TotalArea:{TotalArea} ItemDisplay.DisplaySize:{ItemDisplay.DisplaySize}");
         }
 
         /// <summary>
@@ -371,8 +375,8 @@ namespace Ephemera.IconicSelector
         void UpdateItemsList()
         {
             // Calc grid layout.
-            int xinc = _itemdSize.Width + Spacing;
-            int yinc = _itemdSize.Height + Spacing;
+            int xinc = ItemDisplay.DisplaySize.Width + Spacing;
+            int yinc = ItemDisplay.DisplaySize.Height + Spacing;
 
             // Configure item draw.
             for (int i = 0; i < _itemds.Count; i++)

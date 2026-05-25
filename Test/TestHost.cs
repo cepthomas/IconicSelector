@@ -43,9 +43,9 @@ namespace Ephemera.IconicSelector.Test
             // Add entries to selector. Null forces selector default.
             bmps = [bmp1, bmp2, bmp3, bmp4, defbmp];
 
-            BuildSelector(SelectorStyle.Icon, OpMode.SingleSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 4);
+            //BuildSelector(SelectorStyle.Icon, OpMode.SingleSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 4);
 
-            //BuildSelector(SelectorStyle.Tile, OpMode.Click, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 2);
+            BuildSelector(SelectorStyle.Tile, OpMode.Click, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 2);
 
             //BuildSelector(SelectorStyle.Fill, OpMode.Click, new(128, 64), 3);
 
@@ -132,7 +132,7 @@ namespace Ephemera.IconicSelector.Test
             icsel.Click += (sender, e) => {Tell($"Click -> [{e.ClickedItem}]"); };
 
             // Size me up.
-            Size = new(icsel.Width + SystemInformation.VerticalScrollBarWidth, 600);
+            Size = new(icsel.TotalArea.Width + SystemInformation.VerticalScrollBarWidth, icsel.TotalArea.Height);
 
             Controls.Add(icsel);
         }

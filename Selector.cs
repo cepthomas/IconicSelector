@@ -76,7 +76,7 @@ namespace Ephemera.IconicSelector
         public bool AllowExternalSource { get; set; } = false;
 
         /// <summary>Cosmetics.</summary>
-        public Font DrawFont { get; set; } = new("Calibri", 11, FontStyle.Regular, GraphicsUnit.Point, 0);
+        public Font DrawFont { get; set; } = DefaultFont;
 
         /// <summary>Cosmetics.</summary>
         public Color IndicatorColor { get; set; } = Color.Purple;
@@ -90,8 +90,8 @@ namespace Ephemera.IconicSelector
         /// <summary>If no valid image available.</summary>
         public Bitmap DefaultImage { get; set; }
 
-        /// <summary>Extra info.</summary>
-        readonly ToolTip toolTip1 = new();
+        /// <summary>Total real estate after populating with items. Does not include V scrollbar.</summary>
+        public Size TotalArea { get; private set; } = new();
         #endregion
 
         #region Events
@@ -112,8 +112,8 @@ namespace Ephemera.IconicSelector
 
             // Default images.
             DefaultImage = Icon.ExtractIcon("shell32.dll", 23, false)!.ToBitmap();
-            _dirImage = Icon.ExtractIcon("shell32.dll", 3, false)!.ToBitmap();
-            _urlImage = Icon.ExtractIcon("shell32.dll", 13, false)!.ToBitmap();
+            _bmpDir = Icon.ExtractIcon("shell32.dll", 3, false)!.ToBitmap();
+            _bmpUrl = Icon.ExtractIcon("shell32.dll", 13, false)!.ToBitmap();
         }
         #endregion
 
@@ -140,7 +140,7 @@ namespace Ephemera.IconicSelector
                 DirectoryInfo dinfo = new(name);
                 caption = dinfo.Name;
                 targetname = name;
-                bmp = _dirImage;
+                bmp = _bmpDir;
                 dtype = ItemDataType.Dir;
             }
 
@@ -185,7 +185,7 @@ namespace Ephemera.IconicSelector
                     {
                         case HttpRequestException ex:
                             Tell($"Favicon request failed - using default: {ex.Message}");
-                            bmp = _urlImage;
+                            bmp = _bmpUrl;
                             break;
 
                         default: // Client handles other errors.

@@ -48,24 +48,29 @@ namespace Ephemera.IconicSelector
     [ToolboxItem(false), Browsable(false)] // not useable in designer
     internal class ItemDisplay : UserControl
     {
-        #region Properties
+        #region Properties - instance
         /// <summary>The owned item.</summary>
         public Item Item { get; init; }
 
         /// <summary></summary>
         public bool Selected = false;
+        #endregion
 
+        #region Properties - class
         /// <summary>Allow drag and drop frome external sources - file/folder/url only.</summary>
-        public bool AllowExternalSource { get; set; } = false;
-
-        /// <summary>Geometry.</summary>
-        public Rectangle ImageRect { get; init; } = new();
-
-        /// <summary>Geometry.</summary>
-        public Rectangle TextRect { get; init; } = new();
+        public static bool AllowExternalSource { get; set; } = false;
 
         /// <summary>Cosmetics.</summary>
-        public Color IndicatorColor { get; set; } = Color.Aqua;
+        public static Color IndicatorColor { get; set; } = Color.Aqua;
+
+        /// <summary>Image placement inside control.</summary>
+        public static Rectangle ImageRect { get; set; } = new();
+
+        /// <summary>Text placement inside control.</summary>
+        public static Rectangle TextRect { get; set; } = new();
+
+        /// <summary>Total control real estate.</summary>
+        public static Size DisplaySize { get; set; } = new();
         #endregion
 
         #region Events
@@ -79,7 +84,10 @@ namespace Ephemera.IconicSelector
         Point _dragStart;
 
         /// <summary>For tracking cursor position inside an ItemDisplay control.</summary>
-        CursorLocation _lastCursorLoc = CursorLocation.None;
+        CursorLocation _cursorLoc = CursorLocation.None;
+
+        /// <summary>Indicates focus.</summary>
+        static Color _focusColor = DefaultBackColor;
 
         /// <summary>Indicates one of the controls is currently dragging.</summary>
         static bool _dragging = false;
@@ -97,6 +105,17 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
+        /// Post creation.
+        /// </summary>
+        protected override void OnLoad(EventArgs e)
+        {
+            int shift = 10;
+            _focusColor = Color.FromArgb(BackColor.R - shift, BackColor.G - shift, BackColor.B - shift);
+
+            base.OnLoad(e);
+        }
+
+        /// <summary>
         /// Clean up any resources being used.
         /// </summary>
         /// <param name="disposing">True if managed resources should be disposed.</param>
@@ -108,12 +127,6 @@ namespace Ephemera.IconicSelector
             }
             base.Dispose(disposing);
         }
-
-        /// <summary>Read me</summary>
-        public override string ToString()
-        {
-            return $"Item:{Item} Location:{Location} Selected:{Selected}";
-        }
         #endregion
 
         #region Drag and drop        
@@ -123,10 +136,9 @@ namespace Ephemera.IconicSelector
         /// <param name="e"></param>
         protected override void OnDragEnter(DragEventArgs e)
         {
-
             if (e.Data is not null)
             {
-                if (e.Data.GetDataPresent(typeof(Item)))
+                if (e.Data.GetDataPresent(typeof(ItemDisplay)))
                 {
                     e.Effect = DragDropEffects.Move;
                 }
@@ -137,6 +149,10 @@ namespace Ephemera.IconicSelector
                 else if (e.Data.GetDataPresent(DataFormats.Html))
                 {
                     e.Effect = AllowExternalSource ? DragDropEffects.Copy : DragDropEffects.None;
+                }
+                else
+                {
+                    e.Effect = DragDropEffects.None;
                 }
 
                 Tell($"OnDragEnter() e.Effect:{e.Effect}");
@@ -158,13 +174,13 @@ namespace Ephemera.IconicSelector
             else if (pt.X > (Width * 3 / 4)) { newLoc = CursorLocation.Right; }
             else { newLoc = CursorLocation.Center; }
 
-            if (newLoc != _lastCursorLoc)
+            if (newLoc != _cursorLoc)
             {
-                Tell($"OnDragOver() CursorLocationChanged new:{newLoc} last:{_lastCursorLoc}");
+                //Tell($"OnDragOver() CursorLocationChanged new:{newLoc} last:{_lastCursorLoc}");
                 CursorLocationChanged?.Invoke(this, new(newLoc));
             }
 
-            _lastCursorLoc = newLoc;
+            _cursorLoc = newLoc;
 
             base.OnDragOver(e);
         }
@@ -176,8 +192,8 @@ namespace Ephemera.IconicSelector
         protected override void OnDragLeave(EventArgs e)
         {
             Tell($"OnDragLeave()");
-            _lastCursorLoc = CursorLocation.None;
-            CursorLocationChanged?.Invoke(this, new(_lastCursorLoc));
+            _cursorLoc = CursorLocation.None;
+            CursorLocationChanged?.Invoke(this, new(_cursorLoc));
 
             base.OnDragLeave(e);
         }
@@ -190,13 +206,13 @@ namespace Ephemera.IconicSelector
         protected override void OnDragDrop(DragEventArgs e)
         {
             if (e.Data is null) throw new InvalidOperationException();
-            if (_lastCursorLoc == CursorLocation.None || _lastCursorLoc == CursorLocation.Center) return;
+            if (_cursorLoc == CursorLocation.None || _cursorLoc == CursorLocation.Center) return;
 
-            if (e.Data.GetDataPresent(typeof(Item)))
+            if (e.Data.GetDataPresent(typeof(ItemDisplay)))
             {
                 // Pass along as is.
-                var idata = e.Data.GetData(typeof(ItemDisplay));
-                var src = (ItemDisplay)idata!;
+                var itemd = e.Data.GetData(typeof(ItemDisplay));
+                var src = (ItemDisplay)itemd!;
                 DroppedPayload?.Invoke(this, new(DroppedDataType.Item, src));
             }
             else if (e.Data.GetDataPresent(DataFormats.FileDrop))
@@ -287,7 +303,7 @@ namespace Ephemera.IconicSelector
         /// <param name="pe"></param>
         protected override void OnPaint(PaintEventArgs pe)
         {
-            pe.Graphics.Clear(BackColor);
+            pe.Graphics.Clear(_cursorLoc != CursorLocation.None ? _focusColor : BackColor);
 
             // Main content.
             if (!ImageRect.IsEmpty)
@@ -312,9 +328,9 @@ namespace Ephemera.IconicSelector
 
             if (Selected) // Draw selection box.
             {
-                int boxsz = 3;
                 Rectangle rect = ClientRectangle;
-                //rect.Inflate(-boxsz, -boxsz);
+                int boxsz = 3;
+                rect.Inflate(-boxsz, -boxsz);
                 using Pen pen = new(IndicatorColor, boxsz);
                 pe.Graphics.DrawRectangle(pen, rect);
             }
@@ -323,7 +339,14 @@ namespace Ephemera.IconicSelector
         }
         #endregion
 
-        #region Internals
+        #region Misc
+        /// <summary>Read me</summary>
+        public override string ToString()
+        {
+            //return $"Location:{Location} Selected:{Selected} Item:{Item}";
+            return $"Location:{Location} Size:{Size} Caption:{Item.Caption}";
+        }
+
         /// <summary>
         /// Hello.
         /// </summary>
