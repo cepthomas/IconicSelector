@@ -17,91 +17,12 @@ using Ephemera.NBagOfUis;
 
 namespace Ephemera.IconicSelector
 {
-    #region Types
-    /// <summary>Selector style options.</summary>
-    public enum SelectorStyle
-    {
-        /// <summary>Icon of ImageSize above, text block below</summary>
-        Icon,
-        /// <summary>Icon of ImageSize left, text block right</summary>
-        Tile,
-        /// <summary>Verbatim as provided by client, will clip from top left</summary>
-        Clip,
-        /// <summary>Fill/stretch with image</summary>
-        Fill,
-        /// <summary>Rendered image width from client, height scaled</summary>
-        FitWidth,
-        /// <summary>Rendered image height from client, width scaled</summary>
-        FitHeight,
-    }
-
-    /// <summary>Selector operation mode.</summary>
-    public enum OpMode
-    {
-        /// <summary>One only selection.</summary>
-        SingleSelect,
-        /// <summary>One or more selection.</summary>
-        MultiSelect,
-        /// <summary>Standard single click.</summary>
-        Click,
-    }
-
-    /// <summary>
-    /// User clicked. If item is not null it's a simple click: OpMode is Click.
-    /// Else it's a notification that selection(s) changed: OpMode is *Select.
-    /// </summary>
-    public class ClickEventArgs(Item? item) : EventArgs
-    {
-        public Item? ClickedItem { get; init; } = item;
-    }
-    #endregion
-
     /// <summary>API.</summary>
     public partial class Selector : UserControl
     {
-        #region Properties
-        /// <summary>Current config.</summary>
-        public SelectorStyle Style { get { return _style; } set { _style = value; InitGeometry(); } }
-
-        /// <summary>Current config.</summary>
-        public int NumColumns { get { return _numColumns; } set { _numColumns = value; InitGeometry(); } }
-
-        /// <summary>Image size.</summary>
-        public Size ImageSize { get { return _imageSize; } set { _imageSize = value; InitGeometry(); } }
-
-        /// <summary>What the mouse click does.</summary>
-        public OpMode Mode { get; set; } = OpMode.Click;
-
-        /// <summary>Allow drag and drop frome external sources - file/folder/url only.</summary>
-        public bool AllowExternalSource { get; set; } = false;
-
-        /// <summary>Cosmetics.</summary>
-        public Font DrawFont { get; set; } = DefaultFont;
-
-        /// <summary>Cosmetics.</summary>
-        public Color IndicatorColor { get; set; } = Color.Purple;
-
-        /// <summary>Visual space at edges.</summary>
-        public int Pad { get; set; } = 4;
-
-        /// <summary>Space between items</summary>
-        public int Spacing { get; set; } = 10;
-
-        /// <summary>If no valid image available.</summary>
-        public Bitmap DefaultImage { get; set; }
-
-        /// <summary>Total real estate after populating with items. Does not include V scrollbar.</summary>
-        public Size TotalArea { get; private set; } = new();
-        #endregion
-
-        #region Events
-        /// <summary>Tell client that item was clicked - OpMode = Click.</summary>
-        public new event EventHandler<ClickEventArgs>? Click;
-        #endregion
-
         #region Lifecycle
         /// <summary>
-        /// Constructor.
+        /// Constructor. Doesn't need much so it can be used in the designer.
         /// </summary>
         public Selector()
         {
@@ -111,9 +32,25 @@ namespace Ephemera.IconicSelector
             AutoScroll = true;
 
             // Default images.
-            DefaultImage = Icon.ExtractIcon("shell32.dll", 23, false)!.ToBitmap();
             _bmpDir = Icon.ExtractIcon("shell32.dll", 3, false)!.ToBitmap();
             _bmpUrl = Icon.ExtractIcon("shell32.dll", 13, false)!.ToBitmap();
+            _defaultImage = Icon.ExtractIcon("shell32.dll", 23, false)!.ToBitmap();
+        }
+
+        /// <summary>
+        /// Does the real configuration.
+        /// </summary>
+        /// <param name="config">The configuration</param>
+        public void Init(Config config)
+        {
+            _config = config;
+
+            _itemdSize = ItemDisplay.Init(config);
+
+            if (_config.DefaultImage is not null)
+            {
+                _defaultImage = _config.DefaultImage;
+            }
         }
         #endregion
 
@@ -125,7 +62,7 @@ namespace Ephemera.IconicSelector
         /// <param name="index">Where to insert, -1 is append</param>
         public void AddResourceItem(string name, int index = -1)
         {
-            Bitmap bmp = DefaultImage;
+            Bitmap? bmp = null;// = _defaultImage;
             ItemDataType dtype = ItemDataType.None;
             string caption = "???";
             string namelc = name.ToLower();
@@ -152,7 +89,7 @@ namespace Ephemera.IconicSelector
                            Path.GetFileNameWithoutExtension(name) : finfo.Name;
                 targetname = name;
                 var icon = GraphicsUtils.SafeExtractIcon(targetname);
-                bmp = icon is null ? DefaultImage : icon.ToBitmap();
+                bmp = icon is null ? _defaultImage : icon.ToBitmap();
                 dtype = ItemDataType.File;
             }
 
@@ -198,7 +135,7 @@ namespace Ephemera.IconicSelector
 
             if (dtype != ItemDataType.None)
             {
-                AddItem(dtype, caption, bmp, targetname, index);
+                AddItem(dtype, caption, bmp ?? _defaultImage, targetname, index);
             }
             else
             {
@@ -238,6 +175,30 @@ namespace Ephemera.IconicSelector
             List<Item> res = [];
             _itemds.Where(itemd => itemd.Selected).ForEach(itemd => { res.Add(itemd.Item); });
             return res;
+        }
+
+        /// <summary>
+        /// Remove items.
+        /// </summary>
+        /// <param name="item"></param>
+        public void RemoveItem(Item item)
+        {
+            var res = _itemds.Where(itemd => itemd.Item == item).ToList();
+            res.ForEach(resitem => _itemds.Remove(resitem));
+        }
+
+        /// <summary>
+        /// Total real estate after populating with items. Does not include scrollbars.
+        /// </summary>
+        /// <returns>Items.</returns>
+        public Size GetTotalArea()
+        {
+            // Calc client area.
+            int totalWidth = _config.Spacing + _config.NumColumns * (_itemdSize.Width + _config.Spacing);
+            int numRows = _itemds.Count / _config.NumColumns;
+            if (_itemds.Count % _config.NumColumns > 0) numRows++;
+            int totalHeight = _config.Spacing + numRows * (_itemdSize.Height + _config.Spacing);
+            return new Size(totalWidth, totalHeight);
         }
         #endregion
     }

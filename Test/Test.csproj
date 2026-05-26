@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <!-- Use Exe type to make console available. Lua print() will appear there. -->
+        <!-- Use Exe type to make console available. -->
         <OutputType>Exe</OutputType>
         <!-- <OutputType>WinExe</OutputType> -->
         <TargetFrameworks>net8.0-windows</TargetFrameworks>

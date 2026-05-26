@@ -21,26 +21,17 @@ namespace Ephemera.IconicSelector
     public partial class Selector : UserControl
     {
         #region Fields
-        /// <summary>Backing field for Style.</summary>
-        SelectorStyle _style = SelectorStyle.Icon;
-
-        /// <summary>Backing field for NumColumns.</summary>
-        int _numColumns = 1;
-
-        /// <summary>Backing field for ImageSize.</summary>
-        Size _imageSize = new(32, 32);
+        /// <summary>Current configg.</summary>
+        Config _config = new();
 
         /// <summary>All entries in the collection.</summary>
         readonly List<ItemDisplay> _itemds = [];
 
-        ///// <summary>ItemDisplay geometry.</summary>
-        //Rectangle _itemdImageRect = new();
+        /// <summary>If no valid image available.</summary>
+        Bitmap _defaultImage;
 
-        ///// <summary>ItemDisplay geometry.</summary>
-        //Rectangle _itemdTextRect = new();
-
-        ///// <summary>ItemDisplay geometry.</summary>
-        //Size _itemdSize;
+        /// <summary>ItemDisplay geometry.</summary>
+        Size _itemdSize;
 
         /// <summary>Where to move/insert item.</summary>
         int _insertIndex = NOT_IN_TARGET;
@@ -61,6 +52,11 @@ namespace Ephemera.IconicSelector
         readonly ToolTip toolTip = new();
         #endregion
 
+        #region Events
+        /// <summary>Tell client that item was clicked - OpMode = Click.</summary>
+        public new event EventHandler<ClickEventArgs>? Click;
+        #endregion
+
         #region Lifecycle
         /// <summary>
         ///  Clean up any resources being used.
@@ -74,7 +70,7 @@ namespace Ephemera.IconicSelector
                 _itemds.Clear();
                 _bmpDir?.Dispose();
                 _bmpUrl?.Dispose();
-                DefaultImage?.Dispose();
+                _config.DefaultImage?.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -122,36 +118,38 @@ namespace Ephemera.IconicSelector
             ArgumentNullException.ThrowIfNull(sender);
 
             var itemd = (ItemDisplay)sender;
-            bool sel = itemd.Selected; // current
 
-            switch (e.Button, Mode)
+            switch (e.Button, _config.Mode, itemd.Selected)
             {
-                case (MouseButtons.Left, OpMode.Click):
+
+                case (MouseButtons.Left, OpMode.Click, _):
                     Click?.Invoke(this, new(itemd.Item));
                     break;
 
-                case (MouseButtons.Left, OpMode.SingleSelect):
-                    if (sel)
-                    {
-                        itemd.Selected = false;
-                        Click?.Invoke(this, new(null));
-                    }
-                    else
-                    {
-                        // Deselect others first.
-                        _itemds.ForEach(itemd => itemd.Selected = false);
-                        // Select this one.
-                        itemd.Selected = true;
-                        Click?.Invoke(this, new(null));
-                    }
-                    break;
-
-                case (MouseButtons.Left, OpMode.MultiSelect):
-                    itemd.Selected = !sel;
+                case (MouseButtons.Left, OpMode.SingleSelect, true):
+                    itemd.Selected = false;
                     Click?.Invoke(this, new(null));
                     break;
 
-                case (_, _):
+                case (MouseButtons.Left, OpMode.SingleSelect, false):
+                    // Deselect others first.
+                    _itemds.ForEach(itemd => itemd.Selected = false);
+                    // Select this one.
+                    itemd.Selected = true;
+                    Click?.Invoke(this, new(null));
+                    break;
+
+                case (MouseButtons.Left, OpMode.MultiSelect, true):
+                    itemd.Selected = false;
+                    Click?.Invoke(this, new(null));
+                    break;
+
+                case (MouseButtons.Left, OpMode.MultiSelect, false):
+                    itemd.Selected = true;
+                    Click?.Invoke(this, new(null));
+                    break;
+
+                case (_, _, _):
                     // ignored
                     break;
             }
@@ -208,7 +206,7 @@ namespace Ephemera.IconicSelector
             // Insert marker?
             if (_insertIndex >= 0)
             {
-                using Pen pen = new(IndicatorColor, 4);
+                using Pen pen = new(_config.IndicatorColor, 4);
                 int offset = 3;
 
                 // Special case for last item.
@@ -241,7 +239,7 @@ namespace Ephemera.IconicSelector
         /// <param name="index">Where to insert, -1 is append</param>
         void AddItem(ItemDataType dtype, string caption, Bitmap bmp, object value, int index = -1)
         {
-            switch (Style)
+            switch (_config.Style)
             {
                 case SelectorStyle.Icon:
                     // Use image as provided.
@@ -254,11 +252,11 @@ namespace Ephemera.IconicSelector
                 case SelectorStyle.Clip:
                     // Copy pixels starting from 0, 0 to fill the visible area.
                     PixelBitmap pbmpin = new(bmp);
-                    PixelBitmap pbmpout = new(ImageSize.Width, ImageSize.Height);
+                    PixelBitmap pbmpout = new(_config.ImageSize.Width, _config.ImageSize.Height);
 
-                    for (int x = 0; x < ImageSize.Width && x < bmp.Width; x++)
+                    for (int x = 0; x < _config.ImageSize.Width && x < bmp.Width; x++)
                     {
-                        for (int y = 0; y < ImageSize.Height && y < bmp.Height; y++)
+                        for (int y = 0; y < _config.ImageSize.Height && y < bmp.Height; y++)
                         {
                             pbmpout.SetPixel(x, y, pbmpin.GetPixel(x, y));
                         }
@@ -270,26 +268,26 @@ namespace Ephemera.IconicSelector
                     break;
 
                 case SelectorStyle.Fill:
-                    bmp = MiscUtils.ResizeBitmap(bmp, ImageSize.Width, ImageSize.Height);
+                    bmp = MiscUtils.ResizeBitmap(bmp, _config.ImageSize.Width, _config.ImageSize.Height);
                     break;
 
                 case SelectorStyle.FitHeight:
                     {
-                        float ratio = (float)ItemDisplay.DisplaySize.Height / bmp.Height;
+                        float ratio = (float)_itemdSize.Height / bmp.Height;
                         int tnWidth = (int)(bmp.Width * ratio);
                         int tnHeight = (int)(bmp.Height * ratio);
                         var bmpt = MiscUtils.ResizeBitmap(bmp, tnWidth, tnHeight);
-                        bmp = bmpt.Clone(new(0, 0, ItemDisplay.DisplaySize.Width, ItemDisplay.DisplaySize.Height), PixelFormat.Format32bppArgb);
+                        bmp = bmpt.Clone(new(0, 0, _itemdSize.Width, _itemdSize.Height), PixelFormat.Format32bppArgb);
                     }
                     break;
 
                 case SelectorStyle.FitWidth:
                     {
-                        float ratio = (float)ItemDisplay.DisplaySize.Width / bmp.Width;
+                        float ratio = (float)_itemdSize.Width / bmp.Width;
                         int tnHeight = (int)(bmp.Height * ratio);
                         int tnWidth = (int)(bmp.Width * ratio);
                         var bmpt = MiscUtils.ResizeBitmap(bmp, tnWidth, tnHeight);
-                        bmp = bmpt.Clone(new(0, 0, ItemDisplay.DisplaySize.Width, ItemDisplay.DisplaySize.Height), PixelFormat.Format32bppArgb);
+                        bmp = bmpt.Clone(new(0, 0, _itemdSize.Width, _itemdSize.Height), PixelFormat.Format32bppArgb);
                     }
                     break;
             }
@@ -299,8 +297,8 @@ namespace Ephemera.IconicSelector
             ItemDisplay itemd = new(item)
             {
                 // Init instance properties.
-                Size = ItemDisplay.DisplaySize,
-                Font = DrawFont
+                Size = _itemdSize,
+                Font = _config.DrawFont
             };
             // Hook events.
             itemd.DoMouseClick += Itemd_DoMouseClick;
@@ -325,66 +323,21 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// Calculates geometry of display elements.
-        /// </summary>
-        void InitGeometry()
-        {
-            // Figure geometry.
-            switch (Style)
-            {
-                case SelectorStyle.Icon:
-                    {
-                        ItemDisplay.ImageRect = new(Pad + ImageSize.Width, Pad, ImageSize.Width, ImageSize.Height);
-                        ItemDisplay.TextRect = new(Pad, ItemDisplay.ImageRect.Bottom + Pad, 3 * ImageSize.Width, ImageSize.Height);
-                        ItemDisplay.DisplaySize = new(ItemDisplay.TextRect.Right + Pad, ItemDisplay.TextRect.Bottom + Pad);
-                    }
-                    break;
-
-                case SelectorStyle.Tile:
-                    {
-                        ItemDisplay.ImageRect = new(Pad, Pad, ImageSize.Width, ImageSize.Height);
-                        ItemDisplay.TextRect = new(ItemDisplay.ImageRect.Right + Pad, Pad, 3 * ImageSize.Width, ImageSize.Height);
-                        ItemDisplay.DisplaySize = new(ItemDisplay.TextRect.Right + Pad, ItemDisplay.TextRect.Bottom + Pad);
-                    }
-                    break;
-
-                case SelectorStyle.Clip:
-                case SelectorStyle.Fill:
-                case SelectorStyle.FitWidth:
-                case SelectorStyle.FitHeight:
-                    {
-                        ItemDisplay.ImageRect = new(0, 0, ImageSize.Width, ImageSize.Height);
-                        ItemDisplay.TextRect = new(); // not used
-                        ItemDisplay.DisplaySize = ItemDisplay.ImageRect.Size;
-                    }
-                    break;
-            }
-
-            int totalWidth = Spacing + NumColumns * (ItemDisplay.DisplaySize.Width + Spacing);
-            int numRows = _itemds.Count / NumColumns;
-            if (_itemds.Count % NumColumns > 0) numRows++;
-            int totalHeight = Spacing + numRows * (ItemDisplay.DisplaySize.Height + Spacing);
-            TotalArea = new Size(totalWidth, totalHeight);
-
-            Tell($"geometry TotalArea:{TotalArea} ItemDisplay.DisplaySize:{ItemDisplay.DisplaySize}");
-        }
-
-        /// <summary>
         /// Called after list changes.
         /// </summary>
         void UpdateItemsList()
         {
             // Calc grid layout.
-            int xinc = ItemDisplay.DisplaySize.Width + Spacing;
-            int yinc = ItemDisplay.DisplaySize.Height + Spacing;
+            int xinc = _itemdSize.Width + _config.Spacing;
+            int yinc = _itemdSize.Height + _config.Spacing;
 
             // Configure item draw.
             for (int i = 0; i < _itemds.Count; i++)
             {
-                int row = i / NumColumns;
-                int col = i % NumColumns;
-                int xloc = xinc * col + Spacing;
-                int yloc = yinc * row + Spacing;
+                int row = i / _config.NumColumns;
+                int col = i % _config.NumColumns;
+                int xloc = xinc * col + _config.Spacing;
+                int yloc = yinc * row + _config.Spacing;
 
                 _itemds[i].Location = new Point(xloc, yloc);
             }

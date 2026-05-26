@@ -19,14 +19,26 @@ namespace Ephemera.IconicSelector.Test
         readonly Dictionary<string, string> _states = [];
         const int DEF_IMAGE_SIZE = 32;
         Bitmap[] bmps = [];
+        Selector icsel;
 
-        Selector? icsel = null;
-
+        /// <summary>
+        /// 
+        /// </summary>
         public TestHost()
         {
             SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
+
+            icsel = new Selector()
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true,
+            };
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnLoad(EventArgs e)
         {
             // Init the images.
@@ -56,46 +68,45 @@ namespace Ephemera.IconicSelector.Test
             base.OnLoad(e);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="disposing"></param>
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                icsel?.Dispose();
+                icsel.Dispose();
             }
             base.Dispose(disposing);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="style"></param>
+        /// <param name="mode"></param>
+        /// <param name="imageSize"></param>
+        /// <param name="numCols"></param>
         void BuildSelector(SelectorStyle style, OpMode mode, Size imageSize, int numCols)
         {
-            if (icsel is not null)
-            {
-                Controls.Remove(icsel);
-                icsel.Dispose();
-            }
-
-            icsel = new Selector()
+            var config = new Config()
             {
                 AllowExternalSource = true,
-                Dock = DockStyle.Fill,
-                AutoScroll = true,
-                DrawFont = new Font("Calibri", 11F, FontStyle.Regular, GraphicsUnit.Point, 0),
+                //DrawFont = new Font("Calibri", 10F, FontStyle.Regular, GraphicsUnit.Point, 0),
                 IndicatorColor = Color.Purple,
                 Spacing = 10,
                 Pad = 8,
-                // variable
                 Mode = mode,
                 Style = style,
                 NumColumns = numCols,
                 ImageSize = imageSize,
             };
 
+            icsel.Init(config);
+
             // User items.
             var rand = new Random();
-            //for (int i = 0; i < 10; i++)
-            //{
-            //    var text = $"Item {i} AAA BBB CCC DDD EEE";
-            //    icsel.AddUserItem(text, bmps[rand.Next(0, bmps.Length)], $"This the payload for {text}");
-            //}
 
             // Resource items.
             string[] res =
@@ -126,17 +137,25 @@ namespace Ephemera.IconicSelector.Test
             for (int i = 0; i < res.Length; i++)
             {
                 icsel.AddResourceItem(Environment.ExpandEnvironmentVariables(res[i]));
+                if (rand.Next(0, 4) == 0)
+                {
+                    icsel.AddUserItem($"Item {i} AAA BBB CCC DDD EEE", bmps[rand.Next(0, bmps.Length)], $"This the payload for Item {i}");
+                }
             }
 
             // Hook up events.
             icsel.Click += (sender, e) => {Tell($"Click -> [{e.ClickedItem}]"); };
 
             // Size me up.
-            Size = new(icsel.TotalArea.Width + SystemInformation.VerticalScrollBarWidth, icsel.TotalArea.Height);
+            var area = icsel.GetTotalArea();
+            ClientSize = new(area.Width + SystemInformation.VerticalScrollBarWidth, area.Height + 20);
 
             Controls.Add(icsel);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         void GetFavicon()
         {
             // Play with uri and favicons.
@@ -149,7 +168,7 @@ namespace Ephemera.IconicSelector.Test
             // Download the image and write to the file.
             try
             {
-                //https://www.google.com/s2/favicons?domain=the-domain lets you get png favicons from Google cache
+                //https://www.google.com/s2/favicons?domain=the-domain favicons from Google cache
                 using var httpClient = new HttpClient();
                 var ss = $"https://www.google.com/s2/favicons?domain={uri.Host}not";
 
@@ -186,11 +205,17 @@ namespace Ephemera.IconicSelector.Test
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         void Dump()
         {
             icsel?.GetAllItems().ForEach(it => Tell($">>> {it}"));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         void DefImage()
         {
             // Rainbow
@@ -213,6 +238,10 @@ namespace Ephemera.IconicSelector.Test
             //gr.DrawString($"????", Font, Brushes.Black, 2, 2);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="line"></param>
         void Tell(string line)
         {
             Console.WriteLine($"TEST {line}");
