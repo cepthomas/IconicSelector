@@ -174,7 +174,7 @@ namespace Ephemera.IconicSelector
                     Tell($"Dropped item -> [{draggedItem}]");
                     // Insert a copy of the dragged item at the insert index.
                     Item item = draggedItem.Item;
-                    AddItem(ItemDataType.Item, item.Caption, item.Bitmap, item.Value, _insertIndex);
+                    AddItem(item.DataType, item.Caption, item.Bitmap, item.Value, _insertIndex);
                     // Remove the original dragged item.
                     RemoveItem(draggedItem);
                     break;
