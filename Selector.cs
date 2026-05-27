@@ -178,13 +178,13 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// Remove items.
+        /// Remove item.
         /// </summary>
         /// <param name="item"></param>
         public void RemoveItem(Item item)
         {
             var res = _itemds.Where(itemd => itemd.Item == item).ToList();
-            res.ForEach(resitem => _itemds.Remove(resitem));
+            res.ForEach(itemd => RemoveItem(itemd));
         }
 
         /// <summary>
