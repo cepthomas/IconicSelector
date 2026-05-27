@@ -19,7 +19,7 @@ namespace Ephemera.IconicSelector.Test
         readonly Dictionary<string, string> _states = [];
         const int DEF_IMAGE_SIZE = 32;
         Bitmap[] bmps = [];
-        Selector icsel;
+        readonly Selector icsel;
 
         /// <summary>
         /// 

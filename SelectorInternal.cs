@@ -230,7 +230,7 @@ namespace Ephemera.IconicSelector
 
         #region Internals
         /// <summary>
-        /// Common function to add a new item. Adjusts image for mode.
+        /// Common function to add a new item. Adjusts image for mode. Trims list.
         /// </summary>
         /// <param name="dtype">The value type</param>
         /// <param name="caption">For display below/next to image</param>
@@ -270,26 +270,6 @@ namespace Ephemera.IconicSelector
                 case SelectorStyle.Fill:
                     bmp = MiscUtils.ResizeBitmap(bmp, _config.ImageSize.Width, _config.ImageSize.Height);
                     break;
-
-                case SelectorStyle.FitHeight:
-                    {
-                        float ratio = (float)_itemdSize.Height / bmp.Height;
-                        int tnWidth = (int)(bmp.Width * ratio);
-                        int tnHeight = (int)(bmp.Height * ratio);
-                        var bmpt = MiscUtils.ResizeBitmap(bmp, tnWidth, tnHeight);
-                        bmp = bmpt.Clone(new(0, 0, _itemdSize.Width, _itemdSize.Height), PixelFormat.Format32bppArgb);
-                    }
-                    break;
-
-                case SelectorStyle.FitWidth:
-                    {
-                        float ratio = (float)_itemdSize.Width / bmp.Width;
-                        int tnHeight = (int)(bmp.Height * ratio);
-                        int tnWidth = (int)(bmp.Width * ratio);
-                        var bmpt = MiscUtils.ResizeBitmap(bmp, tnWidth, tnHeight);
-                        bmp = bmpt.Clone(new(0, 0, _itemdSize.Width, _itemdSize.Height), PixelFormat.Format32bppArgb);
-                    }
-                    break;
             }
 
             Item item = new(dtype, caption, bmp, value);
@@ -316,6 +296,14 @@ namespace Ephemera.IconicSelector
             else // append
             {
                 _itemds.Add(itemd);
+            }
+
+            if (_config.MaxItems > 0)
+            {
+                while (_itemds.Count > _config.MaxItems)
+                {
+                    RemoveItem(_itemds.Last());
+                }
             }
 
             UpdateItemsList();

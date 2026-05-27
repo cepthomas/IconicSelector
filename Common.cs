@@ -29,10 +29,6 @@ namespace Ephemera.IconicSelector
         Clip,
         /// <summary>Fill/stretch with image</summary>
         Fill,
-        /// <summary>Rendered image width from client, height scaled</summary>
-        FitWidth,
-        /// <summary>Rendered image height from client, width scaled</summary>
-        FitHeight,
     }
 
     /// <summary>Selector operation mode.</summary>
@@ -74,11 +70,14 @@ namespace Ephemera.IconicSelector
         /// <summary>Image size.</summary>
         public Size ImageSize { get; set; } = new(32, 32);
 
-        /// <summary>Allow drag and drop frome external sources - file/folder/url only.</summary>
+        /// <summary>Allow drag and drop frome external sources - file/folder/url only. TODO1 images?</summary>
         public bool AllowExternalSource { get; set; } = false;
 
         /// <summary>Optional font.</summary>
         public Font? DrawFont { get; set; } = null;
+
+        /// <summary>Optional if no valid image available.</summary>
+        public Bitmap? DefaultImage { get; set; } = null;
 
         /// <summary>Cosmetics.</summary>
         public Color IndicatorColor { get; set; } = Color.Violet;
@@ -86,11 +85,11 @@ namespace Ephemera.IconicSelector
         /// <summary>Visual space at edges.</summary>
         public int Pad { get; set; } = 4;
 
-        /// <summary>Space between items</summary>
+        /// <summary>Space between items.</summary>
         public int Spacing { get; set; } = 10;
 
-        /// <summary>Optional if no valid image available.</summary>
-        public Bitmap? DefaultImage { get; set; } = null;
+        /// <summary>Trim collection tail if > 0.</summary>
+        public int MaxItems { get; set; } = 0;
         #endregion
     }
 }

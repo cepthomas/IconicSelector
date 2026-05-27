@@ -126,8 +126,6 @@ namespace Ephemera.IconicSelector
 
                 case SelectorStyle.Clip:
                 case SelectorStyle.Fill:
-                case SelectorStyle.FitWidth:
-                case SelectorStyle.FitHeight:
                     {
                         _imageRect = new(0, 0, config.ImageSize.Width, config.ImageSize.Height);
                         _textRect = new(); // not used
