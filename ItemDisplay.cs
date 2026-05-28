@@ -75,7 +75,7 @@ namespace Ephemera.IconicSelector
         static Rectangle _textRect = new();
 
         /// <summary>Calculated geometry.</summary>
-        static Size _size = new();
+        static Size _clientSize = new();
 
         /// <summary>Indicates one of the controls is currently dragging.</summary>
         static bool _anyDragging = false;
@@ -112,7 +112,7 @@ namespace Ephemera.IconicSelector
                     {
                         _imageRect = new(config.Pad + config.ImageSize.Width, config.Pad, config.ImageSize.Width, config.ImageSize.Height);
                         _textRect = new(config.Pad, _imageRect.Bottom + config.Pad, 3 * config.ImageSize.Width, config.ImageSize.Height);
-                        _size = new(_textRect.Right + config.Pad, _textRect.Bottom + config.Pad);
+                        _clientSize = new(_textRect.Right + config.Pad, _textRect.Bottom + config.Pad);
                     }
                     break;
 
@@ -120,7 +120,7 @@ namespace Ephemera.IconicSelector
                     {
                         _imageRect = new(config.Pad, config.Pad, config.ImageSize.Width, config.ImageSize.Height);
                         _textRect = new(_imageRect.Right + config.Pad, config.Pad, 3 * config.ImageSize.Width, config.ImageSize.Height);
-                        _size = new(_textRect.Right + config.Pad, _textRect.Bottom + config.Pad);
+                        _clientSize = new(_textRect.Right + config.Pad, _textRect.Bottom + config.Pad);
                     }
                     break;
 
@@ -129,12 +129,12 @@ namespace Ephemera.IconicSelector
                     {
                         _imageRect = new(0, 0, config.ImageSize.Width, config.ImageSize.Height);
                         _textRect = new(); // not used
-                        _size = _imageRect.Size;
+                        _clientSize = _imageRect.Size;
                     }
                     break;
             }
 
-            return _size;
+            return _clientSize;
         }
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace Ephemera.IconicSelector
         }
 
         /// <summary>
-        /// Process dropped payload.
+        /// User dropped payload.
         /// </summary>
         /// <param name="e"></param>
         /// <exception cref="InvalidOperationException"></exception>
@@ -349,7 +349,7 @@ namespace Ephemera.IconicSelector
                 {
                     Rectangle rect = ClientRectangle;
                     rect.Inflate(-10, -10);
-                    pe.Graphics.FillRectangle(Brushes.Crimson, rect);
+                    pe.Graphics.FillRectangle(Brushes.LightYellow, rect);
                 }
             }
 

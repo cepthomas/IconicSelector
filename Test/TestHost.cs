@@ -61,9 +61,7 @@ namespace Ephemera.IconicSelector.Test
 
             //BuildSelector(SelectorStyle.Fill, OpMode.Click, new(128, 64), 3);
 
-            //BuildSelector(SelectorStyle.FitWidth, OpMode.MultiSelect, new(200, 50), 3);
-
-            //BuildSelector(SelectorStyle.FitHeight, OpMode.Click, new(50, 200), 3);
+            //BuildSelector(SelectorStyle.Clip, OpMode.MultiSelect, new(200, 50), 1);
 
             base.OnLoad(e);
         }
@@ -231,12 +229,6 @@ namespace Ephemera.IconicSelector.Test
                 }
             }
             var defbmp = pbmp.GetBitmap();
-
-            //// Big X
-            //_defaultImage = new(32, 32);
-            //using Graphics gr = Graphics.FromImage(_defaultImage);
-            //gr.Clear(Color.LightSalmon);
-            //gr.DrawString($"????", Font, Brushes.Black, 2, 2);
         }
 
         /// <summary>

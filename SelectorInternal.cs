@@ -21,7 +21,7 @@ namespace Ephemera.IconicSelector
     public partial class Selector : UserControl
     {
         #region Fields
-        /// <summary>Current configg.</summary>
+        /// <summary>Current config.</summary>
         Config _config = new();
 
         /// <summary>All entries in the collection.</summary>
@@ -121,7 +121,6 @@ namespace Ephemera.IconicSelector
 
             switch (e.Button, _config.Mode, itemd.Selected)
             {
-
                 case (MouseButtons.Left, OpMode.Click, _):
                     Click?.Invoke(this, new(itemd.Item));
                     break;
@@ -224,6 +223,7 @@ namespace Ephemera.IconicSelector
                 }
             }
 
+
             base.OnPaint(pe);
         }
         #endregion
@@ -284,6 +284,7 @@ namespace Ephemera.IconicSelector
             itemd.DoMouseClick += Itemd_DoMouseClick;
             itemd.DroppedPayload += Itemd_DroppedPayload;
             itemd.CursorLocationChanged += Itemd_CursorLocationChanged;
+            
             if (_config.EnableToolTip)
             {
                 _toolTip.SetToolTip(itemd, value.ToString());
