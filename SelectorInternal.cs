@@ -49,7 +49,7 @@ namespace Ephemera.IconicSelector
         Bitmap _bmpUrl;
 
         /// <summary>Extra info.</summary>
-        readonly ToolTip toolTip = new();
+        readonly ToolTip _toolTip = new();
         #endregion
 
         #region Events
@@ -284,7 +284,10 @@ namespace Ephemera.IconicSelector
             itemd.DoMouseClick += Itemd_DoMouseClick;
             itemd.DroppedPayload += Itemd_DroppedPayload;
             itemd.CursorLocationChanged += Itemd_CursorLocationChanged;
-            toolTip.SetToolTip(itemd, value.ToString());
+            if (_config.EnableToolTip)
+            {
+                _toolTip.SetToolTip(itemd, value.ToString());
+            }
 
             Controls.Add(itemd);
 

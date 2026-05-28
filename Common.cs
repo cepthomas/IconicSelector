@@ -55,8 +55,6 @@ namespace Ephemera.IconicSelector
     /// <summary>Configuration for instance.</summary>
     public class Config
     {
-        // The required modifier indicates that the field or property it applies to must be initialized by an object initializer.Any expression that initializes a new instance of the type must initialize all required members.
-
         #region Properties
         /// <summary>Selector flavor.</summary>
         public SelectorStyle Style { get; set; } = SelectorStyle.Icon;
@@ -72,6 +70,9 @@ namespace Ephemera.IconicSelector
 
         /// <summary>Allow drag and drop frome external sources - file/folder/url only. TODO1 images?</summary>
         public bool AllowExternalSource { get; set; } = false;
+
+        /// <summary>If enabled, show item ToString() when hovering.</summary>
+        public bool EnableToolTip { get; set; } = false;
 
         /// <summary>Optional font.</summary>
         public Font? DrawFont { get; set; } = null;

@@ -95,6 +95,7 @@ namespace Ephemera.IconicSelector.Test
                 AllowExternalSource = true,
                 //DrawFont = new Font("Calibri", 10F, FontStyle.Regular, GraphicsUnit.Point, 0),
                 IndicatorColor = Color.Purple,
+                EnableToolTip = true,
                 Spacing = 10,
                 Pad = 8,
                 Mode = mode,
