@@ -52,8 +52,14 @@ namespace Ephemera.IconicSelector
         /// <summary>The owned item.</summary>
         public Item Item { get; init; }
 
-        /// <summary></summary>
+        /// <summary>User picked me.</summary>
         public bool Selected { get; set; } = false;
+
+        /// <summary>Mouse is over me. TODO implement</summary>
+        public bool Highlight { get; set; } = false;
+
+        /// <summary>Indicates which of the controls is currently being dragged.</summary>
+        public static ItemDisplay? Dragged { get; private set; } = null;
         #endregion
 
         #region Fields - instance
@@ -76,9 +82,6 @@ namespace Ephemera.IconicSelector
 
         /// <summary>Calculated geometry.</summary>
         static Size _clientSize = new();
-
-        /// <summary>Indicates one of the controls is currently dragging.</summary>
-        static bool _anyDragging = false;
         #endregion
 
         #region Events
@@ -245,7 +248,7 @@ namespace Ephemera.IconicSelector
             }
             else if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
-                // Flatten to one event per drop.
+                // Flatten to one event per file.
                 var d = (string[])e.Data.GetData(DataFormats.FileDrop)!;
                 d.ForEach(path => { DroppedPayload?.Invoke(this, new(DroppedDataType.File, path)); });
             }
@@ -277,13 +280,13 @@ namespace Ephemera.IconicSelector
         {
             // Record the starting point of the click
             _dragStart = e.Location;
-            _anyDragging = false;
+            Dragged = null;
 
             base.OnMouseDown(e);
         }
 
         /// <summary>
-        /// Determine if this is a drag start.
+        /// Determine if this is a drag start or plain click.
         /// </summary>
         /// <param name="e"></param>
         protected override void OnMouseMove(MouseEventArgs e)
@@ -296,9 +299,9 @@ namespace Ephemera.IconicSelector
                 int deltaY = Math.Abs(e.Y - _dragStart.Y);
 
                 // Use system metrics for the drag threshold (usually 4x4 pixels)
-                if (!_anyDragging && (deltaX > SystemInformation.DragSize.Width || deltaY > SystemInformation.DragSize.Height))
+                if (Dragged is null && (deltaX > SystemInformation.DragSize.Width || deltaY > SystemInformation.DragSize.Height))
                 {
-                    _anyDragging = true;
+                    Dragged = this;
                     DoDragDrop(this, DragDropEffects.Move);
                     handled = true;
                 }
@@ -313,14 +316,13 @@ namespace Ephemera.IconicSelector
         /// <param name="e"></param>
         protected override void OnMouseUp(MouseEventArgs e)
         {
-            bool handled = false;
-            if (!_anyDragging)
+            if (Dragged is null)
             {
                 // This was a click, not a drag!
                 DoMouseClick?.Invoke(this, e);
             }
 
-            if (!handled) base.OnMouseUp(e);
+            base.OnMouseUp(e);
         }
         #endregion
 
@@ -331,12 +333,16 @@ namespace Ephemera.IconicSelector
         /// <param name="pe"></param>
         protected override void OnPaint(PaintEventArgs pe)
         {
-            pe.Graphics.Clear(BackColor);
-
-            //Shade the focused control?
-            //int shift = 10;
-            //var focusColor = Color.FromArgb(BackColor.R - shift, BackColor.G - shift, BackColor.B - shift);
-            //pe.Graphics.Clear(_cursorLoc != CursorLocation.None ? focusColor : BackColor);
+            if (Highlight)
+            {
+                int shift = 10;
+                var focusColor = Color.FromArgb(BackColor.R - shift, BackColor.G - shift, BackColor.B - shift);
+                pe.Graphics.Clear(focusColor);
+            }
+            else
+            {
+                pe.Graphics.Clear(BackColor);
+            }
 
             // Main content.
             if (!_imageRect.IsEmpty)
@@ -376,7 +382,6 @@ namespace Ephemera.IconicSelector
         /// <summary>Read me</summary>
         public override string ToString()
         {
-            //return $"Location:{Location} Selected:{Selected} Item:{Item}";
             return $"Location:{Location} Size:{Size} Caption:{Item.Caption}";
         }
 

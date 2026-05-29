@@ -9,7 +9,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Ephemera.NBagOfTricks;
 using Ephemera.NBagOfUis;
-using Ephemera.IconicSelector;
 
 
 namespace Ephemera.IconicSelector.Test
@@ -27,6 +26,12 @@ namespace Ephemera.IconicSelector.Test
         public TestHost()
         {
             SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
+
+            // Options:
+            ShowInTaskbar = false;
+            // ShowIcon = false; // in form header
+            WindowState = FormWindowState.Normal; // Minimized
+            // Location - near taskbar icon
 
             icsel = new Selector()
             {
@@ -49,10 +54,12 @@ namespace Ephemera.IconicSelector.Test
             using var icon = new Icon(Path.Combine(srcdir, "Files", "crabe.ico"));
             var bmp3 = icon.ToBitmap();
             var bmp4 = new Bitmap(Path.Combine(srcdir, "Files", "color-picker.png"));
-            //var defbmp = new Bitmap(Path.Combine(srcdir, "Files", "default.png"));
             var defbmp = Icon.ExtractIcon("shell32.dll", 77, false)!.ToBitmap();
 
-            // Add entries to selector. Null forces selector default.
+            var bmpi = new Bitmap(Path.Combine(srcdir, "Files", "color-wheel.png"));
+            Icon = GraphicsUtils.CreateIcon(bmpi);
+
+            // Add entries to selector.
             bmps = [bmp1, bmp2, bmp3, bmp4, defbmp];
 
             //BuildSelector(SelectorStyle.Icon, OpMode.SingleSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 4);
@@ -101,7 +108,6 @@ namespace Ephemera.IconicSelector.Test
                 NumColumns = numCols,
                 ImageSize = imageSize,
             };
-
             icsel.Init(config);
 
             // User items.
@@ -120,7 +126,7 @@ namespace Ephemera.IconicSelector.Test
                 @"%USERPROFILE%\OneDrive\Tools\backup_loose.py",
                 @"%USERPROFILE%\OneDrive\Tools\Wavosaur.exe",
                 @"%USERPROFILE%\OneDrive\Tools\procexp.exe",
-                @"C:\Dev\Libs\IconicSelector\Test\Files\color_wheel.png",
+                @"C:\Dev\Libs\IconicSelector\Test\Files\color-wheel.png",
                 @"%USERPROFILE%\OneDrive\OneDriveDocuments\eat\Dried Cherry Scones.txt",
                 @"%USERPROFILE%\OneDrive\OneDriveDocuments\eat\faves\bean-potato-gratin.pdf",
                 @"%USERPROFILE%\OneDrive\OneDriveDocuments\eat\faves\Beans.docx",
@@ -132,6 +138,11 @@ namespace Ephemera.IconicSelector.Test
                 @"https://www.bobrosslipsum.com/",
                 @"https://en.wikipedia.org/wiki/INI_file",
             ];
+            
+            // Others:
+            //   User Start menu => %APPDATA%\Microsoft\Windows\Start Menu\Programs\+subdirs...
+            //   Taskbar pinned => %APPDATA%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar
+            //   Recent files => %APPDATA%\Microsoft\Windows\Recent and %APPDATA%\Microsoft\Office\Recent
 
             for (int i = 0; i < res.Length; i++)
             {
@@ -145,11 +156,57 @@ namespace Ephemera.IconicSelector.Test
             // Hook up events.
             icsel.Click += (sender, e) => {Tell($"Click -> [{e.ClickedItem}]"); };
 
+            // Selector menu.
+            icsel.ContextMenuStrip = new();
+            icsel.ContextMenuStrip.Opening += ContextMenuStrip_Opening;
+            icsel.ContextMenuStrip.ItemClicked += ContextMenuStrip_ItemClicked;
+
             // Size me up.
             var area = icsel.GetTotalArea();
             ClientSize = new(area.Width + SystemInformation.VerticalScrollBarWidth, area.Height + 20);
 
             Controls.Add(icsel);
+        }
+
+        /// <summary>
+        /// User wants to do something.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void ContextMenuStrip_Opening(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            icsel.ContextMenuStrip!.Items.Clear();
+
+            var item = icsel.GetFocusedItem();
+
+            if (item != null)
+            {
+                icsel.ContextMenuStrip.Items.Add("Remove");
+            }
+
+            icsel.ContextMenuStrip.Items.Add("Debug");
+            icsel.ContextMenuStrip.Items.Add("Hooha");
+        }
+
+        /// <summary>
+        /// User wants to do something.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void ContextMenuStrip_ItemClicked(object? sender, ToolStripItemClickedEventArgs e)
+        {
+            icsel.ContextMenuStrip!.Close();
+
+            switch (e.ClickedItem!.Text)
+            {
+                case "Remove":
+                    var item = icsel.GetFocusedItem();
+                    if (item != null)
+                    {
+                        icsel.RemoveItem(item);
+                    }
+                    break;
+            }
         }
 
         /// <summary>

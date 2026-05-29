@@ -68,7 +68,7 @@ namespace Ephemera.IconicSelector
         /// <summary>Image size.</summary>
         public Size ImageSize { get; set; } = new(32, 32);
 
-        /// <summary>Allow drag and drop frome external sources - file/folder/url only. TODO1 images?</summary>
+        /// <summary>Allow drag and drop frome external sources - file/folder/url only.</summary>
         public bool AllowExternalSource { get; set; } = false;
 
         /// <summary>If enabled, show item ToString() when hovering.</summary>

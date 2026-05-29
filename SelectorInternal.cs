@@ -43,10 +43,10 @@ namespace Ephemera.IconicSelector
         const int IN_TARGET_CENTER = -2;
 
         /// <summary>For dirs.</summary>
-        Bitmap _bmpDir;
+        readonly Bitmap _bmpDir;
 
         /// <summary>If no favicon available.</summary>
-        Bitmap _bmpUrl;
+        readonly Bitmap _bmpUrl;
 
         /// <summary>Extra info.</summary>
         readonly ToolTip _toolTip = new();

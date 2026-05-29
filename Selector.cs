@@ -139,7 +139,8 @@ namespace Ephemera.IconicSelector
             }
             else
             {
-                throw new ArgumentException($"Invalid resource [{name}]");
+                // TODO ignore or
+                //throw new ArgumentException($"Invalid resource [{name}]");
             }
         }
 
@@ -153,6 +154,21 @@ namespace Ephemera.IconicSelector
         public void AddUserItem(string caption, Bitmap bmp, object value, int index = -1)
         {
             AddItem(ItemDataType.User, caption, bmp, value, index);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public Item? GetFocusedItem()
+        {
+            var pt = MousePosition;
+            var cpt = PointToClient(pt);
+
+            Tell($"{pt} {cpt}");
+
+            var vvv = _itemds.Where(itemd => itemd.Bounds.Contains(cpt));
+            return vvv.Any() ? vvv.First().Item : null;
         }
 
         /// <summary>
