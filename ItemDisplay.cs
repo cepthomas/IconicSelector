@@ -50,12 +50,15 @@ namespace Ephemera.IconicSelector
     {
         #region Properties
         /// <summary>The owned item.</summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Item Item { get; init; }
 
         /// <summary>User picked me.</summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool Selected { get; set; } = false;
 
         /// <summary>Mouse is over me. TODO implement</summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool Highlight { get; set; } = false;
 
         /// <summary>Indicates which of the controls is currently being dragged.</summary>

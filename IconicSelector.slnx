@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="IconicSelector.csproj" />
+  <Project Path="Test/Test.csproj" />
+</Solution>
