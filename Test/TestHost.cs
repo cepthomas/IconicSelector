@@ -62,9 +62,9 @@ namespace Ephemera.IconicSelector.Test
             // Add entries to selector.
             bmps = [bmp1, bmp2, bmp3, bmp4, defbmp];
 
-            //BuildSelector(SelectorStyle.Icon, OpMode.SingleSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 4);
+            BuildSelector(SelectorStyle.Icon, OpMode.SingleSelect, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 4);
 
-            BuildSelector(SelectorStyle.Tile, OpMode.Click, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 2);
+            //BuildSelector(SelectorStyle.Tile, OpMode.Click, new(DEF_IMAGE_SIZE, DEF_IMAGE_SIZE), 2);
 
             //BuildSelector(SelectorStyle.Fill, OpMode.Click, new(128, 64), 3);
 
