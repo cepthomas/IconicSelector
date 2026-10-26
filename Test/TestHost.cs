@@ -28,7 +28,7 @@ namespace Ephemera.IconicSelector.Test
             SetStyle(ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
 
             // Options:
-            ShowInTaskbar = false;
+            ShowInTaskbar = true;
             // ShowIcon = false; // in form header
             WindowState = FormWindowState.Normal; // Minimized
             // Location - near taskbar icon
@@ -154,7 +154,8 @@ namespace Ephemera.IconicSelector.Test
             }
 
             // Hook up events.
-            icsel.Click += (sender, e) => {Tell($"Click -> [{e.ClickedItem}]"); };
+            icsel.ItemClick += (sender, e) => { Tell($"{e.ClickedItem} clicked"); };
+            icsel.ItemSelection += (sender, e) => { Tell($"{e.SelectionItems.Count} items selected"); };
 
             // Selector menu.
             icsel.ContextMenuStrip = new();

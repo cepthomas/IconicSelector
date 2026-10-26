@@ -53,8 +53,11 @@ namespace Ephemera.IconicSelector
         #endregion
 
         #region Events
-        /// <summary>Tell client that item was clicked - OpMode = Click.</summary>
-        public new event EventHandler<ClickEventArgs>? Click;
+        /// <summary>Tell client that item was clicked.</summary>
+        public event EventHandler<ClickEventArgs>? ItemClick;
+
+        /// <summary>Tell client that item selection changed.</summary>
+        public event EventHandler<SelectionEventArgs>? ItemSelection;
         #endregion
 
         #region Lifecycle
@@ -122,12 +125,13 @@ namespace Ephemera.IconicSelector
             switch (e.Button, _config.Mode, itemd.Selected)
             {
                 case (MouseButtons.Left, OpMode.Click, _):
-                    Click?.Invoke(this, new(itemd.Item));
+                    ItemClick?.Invoke(this, new(itemd.Item));
                     break;
 
                 case (MouseButtons.Left, OpMode.SingleSelect, true):
+                    // Toggle select.
                     itemd.Selected = false;
-                    Click?.Invoke(this, new(null));
+                    ItemSelection?.Invoke(this, new(GetSelectedItems()));
                     break;
 
                 case (MouseButtons.Left, OpMode.SingleSelect, false):
@@ -135,17 +139,17 @@ namespace Ephemera.IconicSelector
                     _itemds.ForEach(itemd => itemd.Selected = false);
                     // Select this one.
                     itemd.Selected = true;
-                    Click?.Invoke(this, new(null));
+                    ItemSelection?.Invoke(this, new(GetSelectedItems()));
                     break;
 
                 case (MouseButtons.Left, OpMode.MultiSelect, true):
                     itemd.Selected = false;
-                    Click?.Invoke(this, new(null));
+                    ItemSelection?.Invoke(this, new(GetSelectedItems()));
                     break;
 
                 case (MouseButtons.Left, OpMode.MultiSelect, false):
                     itemd.Selected = true;
-                    Click?.Invoke(this, new(null));
+                    ItemSelection?.Invoke(this, new(GetSelectedItems()));
                     break;
 
                 case (_, _, _):
@@ -312,6 +316,17 @@ namespace Ephemera.IconicSelector
 
             UpdateItemsList();
             Invalidate(true); // refresh everything
+        }
+
+        /// <summary>
+        /// Get selected items.
+        /// </summary>
+        /// <returns>Items.</returns>
+        List<Item> GetSelectedItems()
+        {
+            List<Item> res = [];
+            _itemds.Where(itemd => itemd.Selected).ForEach(itemd => { res.Add(itemd.Item); });
+            return res;
         }
 
         /// <summary>

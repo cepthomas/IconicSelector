@@ -43,12 +43,19 @@ namespace Ephemera.IconicSelector
     }
 
     /// <summary>
-    /// User clicked. If item is not null it's a simple click: OpMode is Click.
-    /// Else it's a notification that selection(s) changed: OpMode is *Select.
+    /// User clicked an item -> OpMode.Click.
     /// </summary>
-    public class ClickEventArgs(Item? item) : EventArgs
+    public class ClickEventArgs(Item item) : EventArgs
     {
-        public Item? ClickedItem { get; init; } = item;
+        public Item ClickedItem { get; init; } = item;
+    }
+
+    /// <summary>
+    /// User selected 0 or more items -> OpMode.*Select.
+    /// </summary>
+    public class SelectionEventArgs(List<Item> items) : EventArgs
+    {
+        public List<Item> SelectionItems { get; init; } = items;
     }
     #endregion
 

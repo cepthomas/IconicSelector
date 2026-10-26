@@ -85,8 +85,7 @@ namespace Ephemera.IconicSelector
             else if (File.Exists(name))
             {
                 // Remove some extensions.
-                caption = (namelc.EndsWith(".exe") || namelc.EndsWith(".lnk")) ?
-                           Path.GetFileNameWithoutExtension(name) : finfo.Name;
+                caption = (namelc.EndsWith(".exe") || namelc.EndsWith(".lnk")) ? Path.GetFileNameWithoutExtension(name) : finfo.Name;
                 targetname = name;
                 var icon = GraphicsUtils.SafeExtractIcon(targetname);
                 bmp = icon is null ? _defaultImage : icon.ToBitmap();
@@ -179,17 +178,6 @@ namespace Ephemera.IconicSelector
         {
             List<Item> res = [];
             _itemds.ForEach(itemd => res.Add(itemd.Item));
-            return res;
-        }
-
-        /// <summary>
-        /// Get selected items.
-        /// </summary>
-        /// <returns>Items.</returns>
-        public List<Item> GetSelectedItems()
-        {
-            List<Item> res = [];
-            _itemds.Where(itemd => itemd.Selected).ForEach(itemd => { res.Add(itemd.Item); });
             return res;
         }
 
